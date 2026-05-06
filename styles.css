@@ -511,7 +511,8 @@ button {
   background: var(--slds-blue-50);
   color: #fff;
   border: 0;
-  border-radius: 6px;
+  /* SLDS uses --slds-g-radius-border-circle (9999) for pill buttons */
+  border-radius: var(--radius-full);
   font-size: 14px;
   font-weight: 590;
   cursor: pointer;
@@ -1750,7 +1751,8 @@ body.is-on-details .demo-toolbar .demo-reset svg {
   background: #fff;
   color: var(--slds-on-surface-3);
   border: 1px solid var(--slds-border-input);
-  border-radius: 6px;
+  /* Match SLDS pill shape on all action buttons */
+  border-radius: var(--radius-full);
   font-size: 14px;
   font-weight: 590;
   cursor: pointer;
