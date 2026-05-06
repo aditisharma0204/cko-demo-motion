@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brand Sheet — Brand</title>
+  <style>
+    :root {
+      --sheet-bg: #ffffff;
+      --sheet-surface: #f8f9fa;
+      --sheet-border: #e9ecef;
+      --sheet-text: #212529;
+      --sheet-text-muted: #6c757d;
+      --sheet-radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--sheet-bg);
+      color: var(--sheet-text);
+      line-height: 1.5;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .brand-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--sheet-border);
+    }
+    .brand-header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .brand-header .meta { color: var(--sheet-text-muted); font-size: 0.875rem; }
+    .section { margin-bottom: 3rem; }
+    .section-title {
+      font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;
+      padding-bottom: 0.5rem; border-bottom: 2px solid var(--sheet-border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .badge {
+      font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.5rem;
+      background: var(--sheet-surface); border-radius: 9999px; color: var(--sheet-text-muted);
+    }
+    .subsection { margin-bottom: 1.5rem; }
+    .subsection-title {
+      font-size: 0.875rem; font-weight: 600; color: var(--sheet-text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;
+    }
+    .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+    .color-swatch {
+      background: var(--sheet-bg); border: 1px solid var(--sheet-border);
+      border-radius: var(--sheet-radius); overflow: hidden;
+    }
+    .color-swatch .preview { height: 80px; position: relative; }
+    .color-swatch .preview.checkerboard {
+      background-image:
+        linear-gradient(45deg, #ccc 25%, transparent 25%),
+        linear-gradient(-45deg, #ccc 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ccc 75%),
+        linear-gradient(-45deg, transparent 75%, #ccc 75%);
+      background-size: 10px 10px;
+      background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+    }
+    .color-swatch .preview .fill { position: absolute; inset: 0; }
+    .color-swatch .info { padding: 0.75rem; }
+    .color-swatch .name { font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .color-swatch .value { font-size: 0.75rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); }
+    .gradient-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    .gradient-item { border-radius: var(--sheet-radius); overflow: hidden; border: 1px solid var(--sheet-border); }
+    .gradient-item .preview { height: 100px; }
+    .gradient-item .info { padding: 0.75rem; background: var(--sheet-bg); }
+    .gradient-item .name { font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .gradient-item .value { font-size: 0.625rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); word-break: break-all; }
+    .font-family-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .font-family-sample { background: var(--sheet-surface); border-radius: var(--sheet-radius); padding: 1.5rem; }
+    .font-family-sample .label { font-size: 0.75rem; font-weight: 600; color: var(--sheet-text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .font-family-sample .preview { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .font-family-sample .stack { font-size: 0.75rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); word-break: break-all; }
+    .typography-grid { display: flex; flex-direction: column; gap: 1rem; }
+    .type-sample { display: flex; align-items: baseline; gap: 1rem; padding: 0.75rem; background: var(--sheet-surface); border-radius: var(--sheet-radius); }
+    .type-sample .label { flex: 0 0 80px; font-size: 0.75rem; font-weight: 600; color: var(--sheet-text-muted); text-transform: uppercase; }
+    .type-sample .preview { flex: 1; }
+    .type-sample .meta { flex: 0 0 120px; text-align: right; font-size: 0.75rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); }
+    .spacing-scale { display: flex; flex-direction: column; gap: 0.75rem; }
+    .spacing-item { display: flex; align-items: center; gap: 1rem; }
+    .spacing-item .label { flex: 0 0 60px; font-size: 0.75rem; font-weight: 600; color: var(--sheet-text-muted); text-transform: uppercase; }
+    .spacing-item .bar { height: 24px; background: #066AFE; border-radius: 4px; opacity: 0.8; }
+    .spacing-item .value { flex: 0 0 60px; font-size: 0.75rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); }
+    .radius-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end; }
+    .radius-item { text-align: center; }
+    .radius-item .preview { width: 80px; height: 80px; margin-bottom: 0.5rem; opacity: 0.8; }
+    .radius-item .label { font-size: 0.75rem; font-weight: 600; }
+    .radius-item .value { font-size: 0.75rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); }
+    .shadow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; padding: 2rem 0; }
+    .shadow-item { text-align: center; }
+    .shadow-item .preview {
+      width: 100%; height: 100px; background: var(--sheet-bg); border-radius: var(--sheet-radius);
+      margin-bottom: 1rem; display: flex; align-items: center; justify-content: center;
+      color: var(--sheet-text-muted); font-size: 0.875rem;
+    }
+    .shadow-item .label { font-size: 0.75rem; font-weight: 600; }
+    .shadow-item .value { font-size: 0.625rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); word-break: break-all; max-width: 200px; margin: 0.25rem auto 0; }
+    .motion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+    .motion-item { background: var(--sheet-surface); border-radius: var(--sheet-radius); padding: 1.5rem; }
+    .motion-item .label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 1rem; }
+    .motion-item .preview-container { height: 40px; background: var(--sheet-border); border-radius: 4px; position: relative; overflow: hidden; margin-bottom: 0.75rem; }
+    .motion-item .preview-ball { width: 32px; height: 32px; border-radius: 50%; position: absolute; top: 4px; left: 4px; }
+    .motion-item:hover .preview-ball { left: calc(100% - 36px); }
+    .motion-item .value { font-size: 0.75rem; font-family: ui-monospace, monospace; color: var(--sheet-text-muted); }
+    .logo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+    .logo-item { background: var(--sheet-surface); border: 1px solid var(--sheet-border); border-radius: var(--sheet-radius); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; min-height: 160px; }
+    .logo-item.dark { background: #1a1a1a; border-color: #2a2a2a; }
+    .logo-item img { max-width: 100%; max-height: 96px; object-fit: contain; }
+    .logo-item .label { font-size: 0.75rem; color: var(--sheet-text-muted); text-align: center; word-break: break-all; }
+    .logo-item.dark .label { color: #9ca3af; }
+    .logo-item .label code { font-family: ui-monospace, monospace; font-size: 0.7rem; }
+    .logo-item .logo-fallback::before { content: "(image not loaded — check path)"; color: #ef4444; font-style: italic; display: block; margin-bottom: 0.5rem; }
+    @media print { body { padding: 0; } .section { break-inside: avoid; } .motion-item .preview-ball { left: 4px !important; } }
+  </style>
+</head>
+<body>
+
+  <header class="brand-header">
+    <h1>Brand</h1>
+    <p class="meta">Brand Sheet &bull; Generated 2026-05-06 &bull; Source: css extraction (styles.css) + Salesforce SLDS reference</p>
+    
+  </header>
+
+  
+  <section class="section" id="logo-section">
+    <h2 class="section-title">Logo <span class="badge">2 variant(s)</span></h2>
+    <div class="logo-grid">
+      <div class="logo-item">
+        <img src="https://www.salesforce.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg" alt="Primary logo" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.classList.add('logo-fallback');">
+        <div class="label"><strong>Primary</strong><br><code>https://www.salesforce.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg</code></div>
+      </div>
+      <div class="logo-item">
+        <img src="inline:salesforce-cloud" alt="Logo mark" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.classList.add('logo-fallback');">
+        <div class="label"><strong>Mark / Icon</strong><br><code>inline:salesforce-cloud</code></div>
+      </div></div>
+  </section>
+  
+  <section class="section" id="colors-section">
+    <h2 class="section-title">Colors <span class="badge">19 tokens</span></h2>
+    <div class="subsection"><h3 class="subsection-title">Brand</h3><div class="color-grid">
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#066AFE;"></div></div>
+      <div class="info">
+        <div class="name">Primary</div>
+        <div class="value">#066AFE</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#002775;"></div></div>
+      <div class="info">
+        <div class="name">Secondary</div>
+        <div class="value">#002775</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#00A1E0;"></div></div>
+      <div class="info">
+        <div class="name">Accent</div>
+        <div class="value">#00A1E0</div>
+      </div>
+    </div></div></div>
+    <div class="subsection"><h3 class="subsection-title">Surfaces</h3><div class="color-grid">
+    <div class="color-swatch">
+      <div class="preview checkerboard"><div class="fill" style="background:#FFFFFF;"></div></div>
+      <div class="info">
+        <div class="name">Surface 1</div>
+        <div class="value">#FFFFFF</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview checkerboard"><div class="fill" style="background:#F3F3F3;"></div></div>
+      <div class="info">
+        <div class="name">Surface 2</div>
+        <div class="value">#F3F3F3</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview checkerboard"><div class="fill" style="background:#F8F8F8;"></div></div>
+      <div class="info">
+        <div class="name">Surface 3</div>
+        <div class="value">#F8F8F8</div>
+      </div>
+    </div></div></div>
+    <div class="subsection"><h3 class="subsection-title">Text</h3><div class="color-grid">
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#001E5B;"></div></div>
+      <div class="info">
+        <div class="name">On Surface 1</div>
+        <div class="value">#001E5B</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#5C5C5C;"></div></div>
+      <div class="info">
+        <div class="name">On Surface 2</div>
+        <div class="value">#5C5C5C</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#747474;"></div></div>
+      <div class="info">
+        <div class="name">On Surface 3</div>
+        <div class="value">#747474</div>
+      </div>
+    </div></div></div>
+    <div class="subsection"><h3 class="subsection-title">Feedback</h3><div class="color-grid">
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#04844B;"></div></div>
+      <div class="info">
+        <div class="name">Success</div>
+        <div class="value">#04844B</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#FE9339;"></div></div>
+      <div class="info">
+        <div class="name">Warning</div>
+        <div class="value">#FE9339</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#BA0517;"></div></div>
+      <div class="info">
+        <div class="name">Error</div>
+        <div class="value">#BA0517</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview "><div class="fill" style="background:#066AFE;"></div></div>
+      <div class="info">
+        <div class="name">Info</div>
+        <div class="value">#066AFE</div>
+      </div>
+    </div></div></div>
+    <div class="subsection"><h3 class="subsection-title">Borders</h3><div class="color-grid">
+    <div class="color-swatch">
+      <div class="preview checkerboard"><div class="fill" style="background:#E5E5E5;"></div></div>
+      <div class="info">
+        <div class="name">Border</div>
+        <div class="value">#E5E5E5</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview checkerboard"><div class="fill" style="background:#C9C9C9;"></div></div>
+      <div class="info">
+        <div class="name">Border Strong</div>
+        <div class="value">#C9C9C9</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="preview checkerboard"><div class="fill" style="background:#F3F3F3;"></div></div>
+      <div class="info">
+        <div class="name">Border Subtle</div>
+        <div class="value">#F3F3F3</div>
+      </div>
+    </div></div></div>
+  </section>
+  
+  <section class="section" id="gradients-section">
+    <h2 class="section-title">Gradients <span class="badge">optional</span></h2>
+    <div class="gradient-grid">
+    <div class="gradient-item">
+      <div class="preview" style="background:linear-gradient(135deg, #066AFE 0%, #0250D9 100%);"></div>
+      <div class="info">
+        <div class="name">primary</div>
+        <div class="value">linear-gradient(135deg, #066AFE 0%, #0250D9 100%)</div>
+      </div>
+    </div>
+    <div class="gradient-item">
+      <div class="preview" style="background:linear-gradient(135deg, #00A1E0 0%, #066AFE 100%);"></div>
+      <div class="info">
+        <div class="name">accent</div>
+        <div class="value">linear-gradient(135deg, #00A1E0 0%, #066AFE 100%)</div>
+      </div>
+    </div>
+    <div class="gradient-item">
+      <div class="preview" style="background:linear-gradient(180deg, #FFFFFF 0%, #EDF4FF 100%);"></div>
+      <div class="info">
+        <div class="name">surface</div>
+        <div class="value">linear-gradient(180deg, #FFFFFF 0%, #EDF4FF 100%)</div>
+      </div>
+    </div></div>
+  </section>
+  
+  <section class="section" id="typography-section">
+    <h2 class="section-title">Typography <span class="badge">17 tokens</span></h2>
+    <div class="subsection"><h3 class="subsection-title">Font Families</h3><div class="font-family-grid"><div class="font-family-sample"><div class="label">Base</div><div class="preview" style="font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif">The quick brown fox jumps over the lazy dog</div><div class="stack">"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif</div></div><div class="font-family-sample"><div class="label">Heading</div><div class="preview" style="font-family:inherit">The quick brown fox jumps over the lazy dog</div><div class="stack">inherit</div></div><div class="font-family-sample"><div class="label">Mono</div><div class="preview" style="font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">const code = "example";</div><div class="stack">ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace</div></div></div></div>
+    <div class="subsection"><h3 class="subsection-title">Type Scale</h3><div class="typography-grid">
+    <div class="type-sample">
+      <div class="label">3XL</div>
+      <div class="preview" style="font-size:40px;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">40px</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">2XL</div>
+      <div class="preview" style="font-size:28px;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">28px</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">XL</div>
+      <div class="preview" style="font-size:20px;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">20px</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">LG</div>
+      <div class="preview" style="font-size:16px;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">16px</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">MD</div>
+      <div class="preview" style="font-size:14px;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">14px</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">SM</div>
+      <div class="preview" style="font-size:12px;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">12px</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">XS</div>
+      <div class="preview" style="font-size:11px;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">11px</div>
+    </div></div></div>
+    <div class="subsection"><h3 class="subsection-title">Font Weights</h3><div class="typography-grid">
+    <div class="type-sample">
+      <div class="label">BOLD</div>
+      <div class="preview" style="font-weight:700;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">700</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">SEMIBOLD</div>
+      <div class="preview" style="font-weight:600;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">600</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">MEDIUM</div>
+      <div class="preview" style="font-weight:500;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">500</div>
+    </div>
+    <div class="type-sample">
+      <div class="label">NORMAL</div>
+      <div class="preview" style="font-weight:400;">The quick brown fox jumps over the lazy dog</div>
+      <div class="meta">400</div>
+    </div></div></div>
+  </section>
+  
+  <section class="section" id="spacing-section">
+    <h2 class="section-title">Spacing <span class="badge">7 tokens</span></h2>
+    <div class="spacing-scale">
+    <div class="spacing-item">
+      <div class="label">XS</div>
+      <div class="bar" style="width:4px;"></div>
+      <div class="value">4px</div>
+    </div>
+    <div class="spacing-item">
+      <div class="label">SM</div>
+      <div class="bar" style="width:8px;"></div>
+      <div class="value">8px</div>
+    </div>
+    <div class="spacing-item">
+      <div class="label">MD</div>
+      <div class="bar" style="width:12px;"></div>
+      <div class="value">12px</div>
+    </div>
+    <div class="spacing-item">
+      <div class="label">LG</div>
+      <div class="bar" style="width:16px;"></div>
+      <div class="value">16px</div>
+    </div>
+    <div class="spacing-item">
+      <div class="label">XL</div>
+      <div class="bar" style="width:24px;"></div>
+      <div class="value">24px</div>
+    </div>
+    <div class="spacing-item">
+      <div class="label">2XL</div>
+      <div class="bar" style="width:32px;"></div>
+      <div class="value">32px</div>
+    </div>
+    <div class="spacing-item">
+      <div class="label">3XL</div>
+      <div class="bar" style="width:48px;"></div>
+      <div class="value">48px</div>
+    </div></div>
+  </section>
+  
+  <section class="section" id="radius-section">
+    <h2 class="section-title">Border Radius <span class="badge">6 tokens</span></h2>
+    <div class="radius-grid">
+    <div class="radius-item">
+      <div class="preview" style="border-radius:0;background:#066AFE;"></div>
+      <div class="label">none</div>
+      <div class="value">0</div>
+    </div>
+    <div class="radius-item">
+      <div class="preview" style="border-radius:4px;background:#066AFE;"></div>
+      <div class="label">sm</div>
+      <div class="value">4px</div>
+    </div>
+    <div class="radius-item">
+      <div class="preview" style="border-radius:8px;background:#066AFE;"></div>
+      <div class="label">md</div>
+      <div class="value">8px</div>
+    </div>
+    <div class="radius-item">
+      <div class="preview" style="border-radius:12px;background:#066AFE;"></div>
+      <div class="label">lg</div>
+      <div class="value">12px</div>
+    </div>
+    <div class="radius-item">
+      <div class="preview" style="border-radius:16px;background:#066AFE;"></div>
+      <div class="label">xl</div>
+      <div class="value">16px</div>
+    </div>
+    <div class="radius-item">
+      <div class="preview" style="border-radius:999px;background:#066AFE;"></div>
+      <div class="label">full</div>
+      <div class="value">999px</div>
+    </div></div>
+  </section>
+  
+  <section class="section" id="shadows-section">
+    <h2 class="section-title">Shadows <span class="badge">4 tokens</span></h2>
+    <div class="shadow-grid">
+    <div class="shadow-item">
+      <div class="preview" style="box-shadow:0 1px 2px rgba(0, 0, 0, 0.05);">Elevation</div>
+      <div class="label">SM</div>
+      <div class="value">0 1px 2px rgba(0, 0, 0, 0.05)</div>
+    </div>
+    <div class="shadow-item">
+      <div class="preview" style="box-shadow:0 4px 12px rgba(0, 0, 0, 0.11);">Elevation</div>
+      <div class="label">MD</div>
+      <div class="value">0 4px 12px rgba(0, 0, 0, 0.11)</div>
+    </div>
+    <div class="shadow-item">
+      <div class="preview" style="box-shadow:0 12px 32px rgba(0, 30, 91, 0.10), 0 2px 6px rgba(0, 30, 91, 0.06);">Elevation</div>
+      <div class="label">LG</div>
+      <div class="value">0 12px 32px rgba(0, 30, 91, 0.10), 0 2px 6px rgba(0, 30, 91, 0.06)</div>
+    </div>
+    <div class="shadow-item">
+      <div class="preview" style="box-shadow:0 24px 48px rgba(0, 30, 91, 0.14), 0 4px 10px rgba(0, 30, 91, 0.08);">Elevation</div>
+      <div class="label">XL</div>
+      <div class="value">0 24px 48px rgba(0, 30, 91, 0.14), 0 4px 10px rgba(0, 30, 91, 0.08)</div>
+    </div></div>
+  </section>
+  
+  <section class="section" id="motion-section">
+    <h2 class="section-title">Motion <span class="badge">optional</span></h2>
+    
+    
+  </section>
+  
+  <section class="section" id="components-section">
+    <h2 class="section-title">Components Preview</h2>
+
+    <div class="subsection">
+      <h3 class="subsection-title">Buttons</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px;background:#FFFFFF;border-radius:12px;border:1px solid #E5E5E5;">
+        <button style="padding:10px 20px;background:#066AFE;color:#fff;border:none;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Primary</button>
+        <button style="padding:10px 20px;background:#002775;color:#fff;border:none;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Secondary</button>
+        <button style="padding:10px 20px;background:transparent;color:#066AFE;border:2px solid #066AFE;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Outline</button>
+        <button style="padding:10px 20px;background:transparent;color:#5C5C5C;border:1px solid #E5E5E5;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;font-weight:400;cursor:pointer;">Ghost</button>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3 class="subsection-title">Sample Card</h3>
+      <div style="max-width:380px;background:#F3F3F3;border-radius:12px;box-shadow:0 4px 12px rgba(0, 0, 0, 0.11);overflow:hidden;">
+        <div style="height:120px;background:linear-gradient(135deg,#066AFE,#002775);"></div>
+        <div style="padding:20px;">
+          <h3 style="font-family:inherit;font-size:18px;font-weight:600;color:#001E5B;margin-bottom:8px;">Card Title</h3>
+          <p style="font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;color:#5C5C5C;line-height:1.6;margin-bottom:16px;">This card demonstrates your brand tokens in context — background, typography, radius, and shadow working together.</p>
+          <button style="width:100%;padding:10px;background:#066AFE;color:#fff;border:none;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Call to Action</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3 class="subsection-title">Feedback States</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
+        <div style="padding:12px 16px;background:#04844B22;border-left:3px solid #04844B;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;color:#001E5B;">✓ Success — action completed</div>
+        <div style="padding:12px 16px;background:#FE933922;border-left:3px solid #FE9339;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;color:#001E5B;">⚠ Warning — please review</div>
+        <div style="padding:12px 16px;background:#BA051722;border-left:3px solid #BA0517;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;color:#001E5B;">✕ Error — something went wrong</div>
+        <div style="padding:12px 16px;background:#066AFE22;border-left:3px solid #066AFE;border-radius:8px;font-family:"Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;font-size:14px;color:#001E5B;">ℹ Info — here's what you need to know</div>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

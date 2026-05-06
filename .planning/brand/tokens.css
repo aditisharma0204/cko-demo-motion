@@ -1,0 +1,85 @@
+/* Brand — Design Tokens (generated 2026-05-06) */
+/* Source: .planning/brand/tokens.json */
+
+:root {
+  /* Colors */
+  --color-primary: #066AFE;
+  --color-secondary: #002775;
+  --color-accent: #00A1E0;
+  --color-surface-1: #FFFFFF;
+  --color-surface-2: #F3F3F3;
+  --color-surface-3: #F8F8F8;
+  --color-surface-tint-1: #EDF4FF;
+  --color-surface-tint-2: #D6E6FF;
+  --color-on-surface-1: #001E5B;
+  --color-on-surface-2: #5C5C5C;
+  --color-on-surface-3: #747474;
+  --color-on-surface-inverse: #FFFFFF;
+  --color-success: #04844B;
+  --color-warning: #FE9339;
+  --color-error: #BA0517;
+  --color-info: #066AFE;
+  --color-border: #E5E5E5;
+  --color-border-strong: #C9C9C9;
+  --color-border-subtle: #F3F3F3;
+
+  /* Typography */
+  --font-family-base: "Salesforce Sans", "SalesforceSans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-heading: inherit;
+  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 40px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+
+  /* Border Radius */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.11);
+  --shadow-lg: 0 12px 32px rgba(0, 30, 91, 0.10), 0 2px 6px rgba(0, 30, 91, 0.06);
+  --shadow-xl: 0 24px 48px rgba(0, 30, 91, 0.14), 0 4px 10px rgba(0, 30, 91, 0.08);
+
+  /* Opacity */
+  --opacity-0: 0;
+  --opacity-10: 0.1;
+  --opacity-25: 0.25;
+  --opacity-50: 0.5;
+  --opacity-75: 0.75;
+  --opacity-100: 1;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #066AFE 0%, #0250D9 100%);
+  --gradient-accent: linear-gradient(135deg, #00A1E0 0%, #066AFE 100%);
+  --gradient-surface: linear-gradient(180deg, #FFFFFF 0%, #EDF4FF 100%);
+
+  /* Logos */
+  --logo-primary: url("https://www.salesforce.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg");
+  --logo-mark: url("inline:salesforce-cloud");
+
+}

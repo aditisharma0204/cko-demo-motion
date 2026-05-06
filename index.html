@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Service Cloud — Create an agentic self-service experience</title>
+    <link rel="stylesheet" href="styles.css?v=35" />
+    <!-- OGL is loaded as an ES module for the Grainient WebGL background.
+         Pinned to a specific version to avoid surprise updates. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "ogl": "https://esm.sh/ogl@1.0.11"
+        }
+      }
+    </script>
+    <script type="module" src="grainient.js?v=2"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+  </head>
+  <body>
+    <!-- ================================================================ -->
+    <!-- DEMO TOOLBAR — pick the exploration, scrub the timeline, reset.   -->
+    <!-- The playback group only appears while an animation is running.    -->
+    <!-- ================================================================ -->
+    <div class="demo-toolbar" id="demo-toolbar" role="toolbar" aria-label="Explorations">
+      <span class="demo-label">Exploration</span>
+      <div class="demo-pills" role="radiogroup" aria-label="Choose exploration">
+        <button class="demo-pill is-active" data-exp="sparkle" role="radio" aria-checked="true">
+          <span class="demo-pill-num">01</span>
+          <span class="demo-pill-name">Sparkle</span>
+        </button>
+        <button class="demo-pill" data-exp="clarity" role="radio" aria-checked="false">
+          <span class="demo-pill-num">02</span>
+          <span class="demo-pill-name">Clarity</span>
+        </button>
+        <button class="demo-pill" data-exp="gesture" role="radio" aria-checked="false">
+          <span class="demo-pill-num">03</span>
+          <span class="demo-pill-name">Gesture</span>
+        </button>
+      </div>
+
+      <div class="demo-playback" id="playback" aria-hidden="true">
+        <span class="demo-divider" aria-hidden="true"></span>
+        <button class="playback-btn playback-play" id="playback-play" aria-label="Play / Pause">
+          <svg class="playback-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/>
+            <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/>
+          </svg>
+          <svg class="playback-icon-play" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5v14l11-7L8 5Z" fill="currentColor"/>
+          </svg>
+        </button>
+        <button class="playback-btn playback-restart" id="playback-restart" aria-label="Restart">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M12 5V2L8 6l4 4V7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5H5a7 7 0 0 0 7 7 7 7 0 0 0 7-7 7 7 0 0 0-7-7Z"/>
+          </svg>
+        </button>
+        <div class="playback-track" id="playback-track">
+          <div class="playback-fill" id="playback-fill"></div>
+          <div class="playback-marks" id="playback-marks" aria-hidden="true"></div>
+        </div>
+        <span class="playback-time" id="playback-time">0.0s / 0.0s</span>
+        <span class="demo-divider" aria-hidden="true"></span>
+      </div>
+
+      <button class="demo-reset" id="demo-reset" aria-label="Restart the demo from the landing page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5V2L8 6l4 4V7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5H5a7 7 0 0 0 7 7 7 7 0 0 0 7-7 7 7 0 0 0-7-7Z"/></svg>
+        Restart demo
+      </button>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- VIEW 1: LANDING                                                    -->
+    <!-- ================================================================ -->
+    <div class="view view-landing is-active" id="view-landing">
+      <div class="app">
+        <!-- Side Nav -->
+        <aside class="side-nav" aria-label="Primary">
+          <a class="nav-item" href="#" aria-label="Home" data-app="home">
+            <span class="nav-icon"><img src="assets/icons/home.png" alt="" /></span>
+            <span class="nav-label">Home</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Contacts" data-app="contacts">
+            <span class="nav-icon"><img src="assets/icons/contacts.png" alt="" /></span>
+            <span class="nav-label">Contacts</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Accounts" data-app="accounts">
+            <span class="nav-icon"><img src="assets/icons/accounts.png" alt="" /></span>
+            <span class="nav-label">Accounts</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Sales" data-app="sales">
+            <span class="nav-icon"><img src="assets/icons/sales.png" alt="" /></span>
+            <span class="nav-label">Sales</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Marketing" data-app="marketing">
+            <span class="nav-icon"><img src="assets/icons/marketing.png" alt="" /></span>
+            <span class="nav-label">Marketing</span>
+          </a>
+          <a class="nav-item is-selected" href="#" aria-label="Service" aria-current="page" data-app="service">
+            <span class="nav-icon"><img src="assets/icons/service.png" alt="" /></span>
+            <span class="nav-label">Service</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Commerce" data-app="commerce">
+            <span class="nav-icon"><img src="assets/icons/commerce.png" alt="" /></span>
+            <span class="nav-label">Commerce</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Gen Canvas" data-app="gencanvas">
+            <span class="nav-icon"><img src="assets/icons/gencanvas.png" alt="" /></span>
+            <span class="nav-label">Gen Canvas</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Your Account" data-app="account">
+            <span class="nav-icon"><img src="assets/icons/account.png" alt="" /></span>
+            <span class="nav-label">Your Account</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="More" data-app="more">
+            <span class="nav-icon"><img src="assets/icons/more.png" alt="" /></span>
+            <span class="nav-label">More</span>
+          </a>
+        </aside>
+
+        <!-- Main column -->
+        <div class="main">
+          <header class="global-header">
+            <div class="logo" aria-label="Salesforce">
+              <svg viewBox="0 0 273 191" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#00A1E0" d="M113.7 20.8c8.8-9.2 21.1-14.9 34.7-14.9 18.1 0 33.9 10.1 42.3 25.1 7.3-3.3 15.4-5.1 23.9-5.1 32.7 0 59.2 26.8 59.2 59.8s-26.5 59.8-59.2 59.8c-4 0-7.9-.4-11.6-1.2-7.4 13.2-21.5 22.1-37.7 22.1-6.8 0-13.2-1.6-18.9-4.4-7.5 17.6-25 30-45.3 30-21.2 0-39.3-13.4-46.3-32.2-3 .6-6.1.9-9.3.9C20.4 161.7-.1 141.1-.1 115.6c0-17.1 9.2-32 22.9-40-2.8-6.5-4.4-13.6-4.4-21.1C18.4 25 41.8 1.6 70.6 1.6c16.9 0 31.9 8.1 41.4 20.6"/>
+              </svg>
+            </div>
+
+            <div class="search">
+              <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 4a6 6 0 1 0 3.8 10.7l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>
+              <input type="search" placeholder="Search…" aria-label="Search" />
+            </div>
+
+            <div class="header-actions">
+              <button class="icon-btn" aria-label="Agentforce">
+                <img src="assets/icons/agentforce.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Add">
+                <img src="assets/icons/add.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Trailhead">
+                <img src="assets/icons/trailhead.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Help">
+                <img src="assets/icons/help.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Setup">
+                <img src="assets/icons/settings.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Notifications">
+                <img src="assets/icons/notification.png" alt="" />
+              </button>
+              <div class="avatar" aria-label="User profile"></div>
+            </div>
+          </header>
+
+          <nav class="tab-bar" aria-label="Application">
+            <div class="app-name">Service Cloud</div>
+            <a class="tab" href="#">Home</a>
+            <a class="tab is-selected" href="#" aria-current="page">
+              Help Agent Creation
+              <span class="tab-close" aria-label="Close tab">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 6 12 12m0-12L6 18"/></svg>
+              </span>
+            </a>
+          </nav>
+
+          <main class="page">
+            <div class="page-bg" aria-hidden="true">
+              <div class="glow glow-1"></div>
+              <div class="glow glow-2"></div>
+              <div class="glow glow-3"></div>
+            </div>
+
+            <section class="hero">
+              <div class="preview-card" aria-hidden="true">
+                <div class="preview-chrome">
+                  <span class="chrome-line"></span>
+                  <span class="chrome-line"></span>
+                  <span class="chrome-line"></span>
+                  <span class="chrome-line"></span>
+                  <span class="chrome-pill"></span>
+                </div>
+                <div class="preview-body">
+                  <div class="preview-card-inner">
+                    <span class="preview-line line-md"></span>
+                    <span class="preview-line line-sm"></span>
+                    <div class="preview-search">
+                      <div class="preview-search-pill">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6" stroke="#9F7CFF" stroke-width="2" fill="none"/><path d="m15 15 4 4" stroke="#9F7CFF" stroke-width="2" stroke-linecap="round"/><path d="M16 5l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z" fill="#9F7CFF"/></svg>
+                      </div>
+                    </div>
+                    <div class="preview-metrics">
+                      <span class="metric"></span>
+                      <span class="metric"></span>
+                      <span class="metric"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h1 class="hero-title">Create an agentic self-service experience</h1>
+              <p class="hero-subtitle">
+                Deflect cases and provide 24/7 customer support. Customize your AI agent,
+                then add it to your communication channels.
+              </p>
+              <button class="btn-brand" type="button" id="btn-get-started">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Zm6 10 .9 2.6L21 16l-2.1.4L18 19l-.9-2.6L15 16l2.1-.4L18 13Z"/></svg>
+                Get Started
+              </button>
+            </section>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- VIEW 2: CREATING — three explorations, one plays at a time         -->
+    <!-- ================================================================ -->
+    <div class="view view-creating" id="view-creating" data-exp="sparkle" aria-hidden="true">
+      <!-- Same backdrop as landing -->
+      <div class="page-bg" aria-hidden="true">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- GESTURE backdrop — fullscreen WebGL gradient + overlay text.    -->
+      <!-- Sits behind/over the morphing stage, only visible during the    -->
+      <!-- gesture exploration (driven by [data-exp="gesture"]).            -->
+      <!-- =============================================================== -->
+      <div class="exp-gesture-bg" id="exp-gesture-bg" aria-hidden="true"></div>
+      <div class="exp-gesture-overlay" id="exp-gesture-overlay" aria-hidden="true">
+        <h1 class="exp-gesture-title" id="exp-gesture-title" aria-live="polite"></h1>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- SPARKLE overlay — title above the sparkle Lottie, no card chrome -->
+      <!-- Visible only during the sparkle exploration.                     -->
+      <!-- =============================================================== -->
+      <div class="exp-sparkle-overlay" id="exp-sparkle-overlay" aria-hidden="true">
+        <div class="exp-sparkle-lottie" id="exp-sparkle-lottie" aria-hidden="true"></div>
+        <h1 class="exp-sparkle-title" id="exp-sparkle-title">Crafting your help agent</h1>
+      </div>
+
+      <!-- Morphing card — positioned at the same place as the landing's preview card. -->
+      <div class="exp-stage" id="exp-stage">
+        <!-- =============================================================== -->
+        <!-- 01 SPARKLE — backdrop lives outside the stage (see top of view) -->
+        <!-- The stage entry for sparkle is intentionally empty so the      -->
+        <!-- fullscreen overlay (title + Lottie) is unobstructed.           -->
+        <!-- =============================================================== -->
+        <div class="exp exp-sparkle" data-exp="sparkle"></div>
+
+        <!-- =============================================================== -->
+        <!-- 02 CLARITY — placeholder shapes resolve into specific content    -->
+        <!-- =============================================================== -->
+        <div class="exp exp-clarity" data-exp="clarity">
+          <!-- Just the Lottie blur, centered on screen, no card chrome -->
+          <div class="exp-clarity-blur" id="exp-clarity-lottie" aria-hidden="true"></div>
+          <!-- Centered, animated caption that cycles three lines. -->
+          <p class="exp-clarity-caption" id="exp-clarity-caption" aria-live="polite"></p>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- 03 GESTURE — backdrop lives outside the stage (see top of view) -->
+        <!-- The stage entry for gesture is intentionally empty so the       -->
+        <!-- fullscreen gradient + overlay text are unobstructed.            -->
+        <!-- =============================================================== -->
+        <div class="exp exp-gesture" data-exp="gesture"></div>
+      </div>
+
+      <!-- Subtle top-of-screen status. Each exploration writes its own
+           text via setCaption(); empty by default so nothing leaks
+           between runs. -->
+      <p class="exp-caption" id="exp-caption" aria-live="polite"></p>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- VIEW 3: AGENT DETAILS                                              -->
+    <!-- ================================================================ -->
+    <div class="view view-details" id="view-details" aria-hidden="true">
+      <div class="app">
+        <!-- Side Nav — kept in lockstep with the landing view's nav.
+             If you update one, update the other (or extract a partial). -->
+        <aside class="side-nav" aria-label="Primary">
+          <a class="nav-item" href="#" aria-label="Home" data-app="home">
+            <span class="nav-icon"><img src="assets/icons/home.png" alt="" /></span>
+            <span class="nav-label">Home</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Contacts" data-app="contacts">
+            <span class="nav-icon"><img src="assets/icons/contacts.png" alt="" /></span>
+            <span class="nav-label">Contacts</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Accounts" data-app="accounts">
+            <span class="nav-icon"><img src="assets/icons/accounts.png" alt="" /></span>
+            <span class="nav-label">Accounts</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Sales" data-app="sales">
+            <span class="nav-icon"><img src="assets/icons/sales.png" alt="" /></span>
+            <span class="nav-label">Sales</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Marketing" data-app="marketing">
+            <span class="nav-icon"><img src="assets/icons/marketing.png" alt="" /></span>
+            <span class="nav-label">Marketing</span>
+          </a>
+          <a class="nav-item is-selected" href="#" aria-label="Service" aria-current="page" data-app="service">
+            <span class="nav-icon"><img src="assets/icons/service.png" alt="" /></span>
+            <span class="nav-label">Service</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Commerce" data-app="commerce">
+            <span class="nav-icon"><img src="assets/icons/commerce.png" alt="" /></span>
+            <span class="nav-label">Commerce</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Gen Canvas" data-app="gencanvas">
+            <span class="nav-icon"><img src="assets/icons/gencanvas.png" alt="" /></span>
+            <span class="nav-label">Gen Canvas</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Your Account" data-app="account">
+            <span class="nav-icon"><img src="assets/icons/account.png" alt="" /></span>
+            <span class="nav-label">Your Account</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="More" data-app="more">
+            <span class="nav-icon"><img src="assets/icons/more.png" alt="" /></span>
+            <span class="nav-label">More</span>
+          </a>
+        </aside>
+
+        <div class="main">
+          <header class="global-header">
+            <div class="logo" aria-label="Salesforce">
+              <svg viewBox="0 0 273 191" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#00A1E0" d="M113.7 20.8c8.8-9.2 21.1-14.9 34.7-14.9 18.1 0 33.9 10.1 42.3 25.1 7.3-3.3 15.4-5.1 23.9-5.1 32.7 0 59.2 26.8 59.2 59.8s-26.5 59.8-59.2 59.8c-4 0-7.9-.4-11.6-1.2-7.4 13.2-21.5 22.1-37.7 22.1-6.8 0-13.2-1.6-18.9-4.4-7.5 17.6-25 30-45.3 30-21.2 0-39.3-13.4-46.3-32.2-3 .6-6.1.9-9.3.9C20.4 161.7-.1 141.1-.1 115.6c0-17.1 9.2-32 22.9-40-2.8-6.5-4.4-13.6-4.4-21.1C18.4 25 41.8 1.6 70.6 1.6c16.9 0 31.9 8.1 41.4 20.6"/>
+              </svg>
+            </div>
+            <div class="search">
+              <svg class="search-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M10 4a6 6 0 1 0 3.8 10.7l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>
+              <input type="search" placeholder="Search…" aria-label="Search" />
+            </div>
+            <div class="header-actions">
+              <button class="icon-btn" aria-label="Agentforce"><img src="assets/icons/agentforce.png" alt="" /></button>
+              <button class="icon-btn" aria-label="Add"><img src="assets/icons/add.png" alt="" /></button>
+              <button class="icon-btn" aria-label="Trailhead"><img src="assets/icons/trailhead.png" alt="" /></button>
+              <button class="icon-btn" aria-label="Help"><img src="assets/icons/help.png" alt="" /></button>
+              <button class="icon-btn" aria-label="Setup"><img src="assets/icons/settings.png" alt="" /></button>
+              <button class="icon-btn" aria-label="Notifications"><img src="assets/icons/notification.png" alt="" /></button>
+              <div class="avatar" aria-label="User profile"></div>
+            </div>
+          </header>
+
+          <nav class="tab-bar" aria-label="Application">
+            <button class="app-launcher" aria-label="App launcher">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <g fill="currentColor">
+                  <circle cx="5"  cy="5"  r="1.6"/>
+                  <circle cx="12" cy="5"  r="1.6"/>
+                  <circle cx="19" cy="5"  r="1.6"/>
+                  <circle cx="5"  cy="12" r="1.6"/>
+                  <circle cx="12" cy="12" r="1.6"/>
+                  <circle cx="19" cy="12" r="1.6"/>
+                  <circle cx="5"  cy="19" r="1.6"/>
+                  <circle cx="12" cy="19" r="1.6"/>
+                  <circle cx="19" cy="19" r="1.6"/>
+                </g>
+              </svg>
+            </button>
+            <div class="app-name app-name-agentforce">
+              <span class="app-name-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path fill="url(#agentGrad)" d="M12 2l1.8 5.4 5.7.2-4.6 3.4 1.7 5.5L12 13.2l-4.6 3.3 1.7-5.5L4.5 7.6l5.7-.2L12 2Z"/><defs><linearGradient id="agentGrad" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#1AB9FF"/><stop offset="1" stop-color="#9F7CFF"/></linearGradient></defs></svg>
+              </span>
+              Agentforce Service
+            </div>
+            <a class="tab" href="#">Home</a>
+            <a class="tab is-selected" href="#" aria-current="page">
+              Help Agent Creation
+              <span class="tab-close" aria-label="Close tab">
+                <svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 6 12 12m0-12L6 18"/></svg>
+              </span>
+            </a>
+            <a class="tab" href="#">Campaigns <span class="tab-caret">⌄</span></a>
+            <a class="tab" href="#">Omni-Monitoring <span class="tab-caret">⌄</span></a>
+            <a class="tab" href="#">Omni Inbox <span class="tab-caret">⌄</span></a>
+            <a class="tab" href="#">Leads <span class="tab-caret">⌄</span></a>
+            <a class="tab" href="#">More <span class="tab-caret">⌄</span></a>
+            <button class="edit-btn" aria-label="Edit nav">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
+            </button>
+          </nav>
+
+          <main class="details-page">
+            <div class="details-shell">
+              <!-- Setup rail — exit, agent avatar, vertical step progress.
+                   Mirrors the multi-step wizard structure shown in Figma. -->
+              <aside class="setup-rail" aria-label="Setup steps">
+                <button class="rail-exit" aria-label="Exit setup">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                          d="M14 7V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-2 M11 12h10 M17 8l4 4-4 4"/>
+                  </svg>
+                </button>
+                <div class="rail-avatar" aria-hidden="true">
+                  <svg viewBox="0 0 32 32">
+                    <defs>
+                      <radialGradient id="railAv" cx="50%" cy="40%" r="60%">
+                        <stop offset="0%"  stop-color="#E5B9FE"/>
+                        <stop offset="55%" stop-color="#9F7CFF"/>
+                        <stop offset="100%" stop-color="#066AFE"/>
+                      </radialGradient>
+                    </defs>
+                    <circle cx="16" cy="16" r="14" fill="url(#railAv)"/>
+                    <path fill="#fff" opacity="0.9" d="M16 9l1.3 3.7 3.9.1-3.2 2.3 1.2 3.7L16 16.6l-3.2 2.2 1.2-3.7-3.2-2.3 3.9-.1L16 9Z"/>
+                  </svg>
+                </div>
+                <ol class="rail-steps" aria-label="Setup progress">
+                  <li class="rail-step is-active" aria-current="step">
+                    <span class="rail-dot" aria-hidden="true"></span>
+                  </li>
+                  <li class="rail-step">
+                    <span class="rail-dot" aria-hidden="true"></span>
+                  </li>
+                  <li class="rail-step">
+                    <span class="rail-dot" aria-hidden="true"></span>
+                  </li>
+                  <li class="rail-step">
+                    <span class="rail-dot" aria-hidden="true"></span>
+                  </li>
+                </ol>
+              </aside>
+
+              <section class="details-form" aria-labelledby="agent-details-h2">
+                <h2 class="form-title" id="agent-details-h2">Agent Details</h2>
+
+                <div class="form-field reveal" style="--reveal-delay: 80ms">
+                  <label class="form-label" for="agent-name">
+                    <span class="req">*</span>
+                    Agent Name (Internal)
+                    <span class="info-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 5.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm1 9.5h-2v-6h2v6Z"/></svg>
+                    </span>
+                  </label>
+                  <input
+                    id="agent-name"
+                    class="form-input"
+                    type="text"
+                    value="Pearson Support Assistant"
+                  />
+                </div>
+
+                <div class="form-field reveal" style="--reveal-delay: 160ms">
+                  <label class="form-label" for="agent-language">
+                    Language
+                    <span class="info-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 5.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm1 9.5h-2v-6h2v6Z"/></svg>
+                    </span>
+                  </label>
+                  <div class="form-select">
+                    <select id="agent-language">
+                      <option>English</option>
+                      <option>Spanish</option>
+                      <option>French</option>
+                      <option>German</option>
+                      <option>Japanese</option>
+                    </select>
+                    <svg class="select-caret" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m7 10 5 5 5-5H7Z"/></svg>
+                  </div>
+                </div>
+
+                <div class="form-field reveal" style="--reveal-delay: 240ms">
+                  <label class="form-label" for="agent-description">
+                    <span class="req">*</span>
+                    Company Description
+                    <span class="info-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 5.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm1 9.5h-2v-6h2v6Z"/></svg>
+                    </span>
+                  </label>
+                  <textarea id="agent-description" class="form-textarea" rows="3">At Power Education, we empower students to learn and thrive with confidence through innovative, efficient educational experiences—merging AI-driven self-service tools with simplified course management and support.</textarea>
+                </div>
+
+                <div class="form-field reveal" style="--reveal-delay: 320ms">
+                  <label class="form-label" for="agent-instructions">
+                    <span class="req">*</span>
+                    Instructions
+                    <span class="info-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 5.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm1 9.5h-2v-6h2v6Z"/></svg>
+                    </span>
+                  </label>
+                  <textarea id="agent-instructions" class="form-textarea form-textarea-tall" rows="10"># Personality
+You are Sara, a friendly and knowledgeable help agent at Pearson, dedicated to assisting students with their educational needs. You take pride in simplifying complex topics and enjoy helping learners find the right solutions. You're patient, precise, and treat every student like a capable peer who just needs a little guidance.
+
+# Environment
+You work on the support team for Pearson Education, an online platform offering resources for students, including study guides, tutoring services, and educational tools. Callers are typically students, parents, or educators seeking help with course materials, account access, billing inquiries, or platform navigation. You have access to account management tools and can create support tickets or escalate issues to a senior agent.</textarea>
+                </div>
+              </section>
+            </div>
+
+            <footer class="details-footer">
+              <button class="btn-neutral" type="button">Back</button>
+              <div class="details-footer-spacer"></div>
+              <button class="btn-neutral" type="button">Save and close</button>
+              <button class="btn-brand btn-continue" type="button">Continue</button>
+            </footer>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js?v=30"></script>
+  </body>
+</html>
