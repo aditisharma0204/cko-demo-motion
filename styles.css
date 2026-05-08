@@ -1162,6 +1162,60 @@ body.is-on-details .demo-toolbar .demo-reset svg {
 }
 
 /* ============================================================ */
+/* 04 — ASTRO SPARKLE                                             */
+/* Same spatial pattern as Sparkle: title above, Lottie below,    */
+/* both vertically centered on the canvas. Lottie is the Astro   */
+/* mascot with sparkle particles emitting outward.                */
+/* ============================================================ */
+.exp-astro-sparkle-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 480ms ease, visibility 0s linear 480ms;
+  padding: 0 32px;
+}
+
+.view-creating[data-exp="astro-sparkle"] .exp-astro-sparkle-overlay {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 480ms ease, visibility 0s linear 0s;
+}
+
+.exp-astro-sparkle-title {
+  font-family: var(--font-family-base);
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: rgba(0, 30, 91, 0.85);
+  margin: 0;
+  text-align: center;
+  max-width: 24ch;
+}
+
+.exp-astro-sparkle-lottie {
+  /* Astro composition is 200×200; render larger than basic Sparkle
+     since the character is the focal point, not just a glyph. */
+  width: min(48vw, 420px);
+  aspect-ratio: 1 / 1;
+  display: block;
+}
+
+.exp-astro-sparkle-lottie svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ============================================================ */
 /* 02 — CLARITY                                                   */
 /* No card. Just the Lottie blur, large and centered.             */
 /* ============================================================ */

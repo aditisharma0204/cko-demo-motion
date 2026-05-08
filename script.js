@@ -20,6 +20,7 @@ let activeExp = "sparkle";
 let isRunning = false;
 let clarityLottie = null;
 let sparkleLottie = null;
+let astroSparkleLottie = null;
 
 /* ----------------------------------------------------------- */
 /* Lottie — Clarity blur animation                              */
@@ -75,10 +76,38 @@ function initSparkleLottie() {
   return sparkleLottie;
 }
 
-// Pre-warm both animations so the first click is responsive.
+/* ----------------------------------------------------------- */
+/* Lottie — Astro Sparkle (V1: comet-from-Astro direction)      */
+/* ----------------------------------------------------------- */
+function initAstroSparkleLottie() {
+  if (astroSparkleLottie) return astroSparkleLottie;
+  if (typeof lottie === "undefined") return null;
+  const container = document.getElementById("exp-astro-sparkle-lottie");
+  if (!container) return null;
+  try {
+    astroSparkleLottie = lottie.loadAnimation({
+      container,
+      renderer: "svg",
+      loop: false,
+      autoplay: false,
+      path: "assets/Astro-Sparkle-Motion.json",
+      rendererSettings: {
+        preserveAspectRatio: "xMidYMid meet",
+        progressiveLoad: true,
+      },
+    });
+  } catch (e) {
+    console.error("[astro sparkle lottie load error]", e);
+    astroSparkleLottie = null;
+  }
+  return astroSparkleLottie;
+}
+
+// Pre-warm all Lottie animations so the first click is responsive.
 window.addEventListener("DOMContentLoaded", () => {
   initClarityLottie();
   initSparkleLottie();
+  initAstroSparkleLottie();
 });
 
 /* ----------------------------------------------------------- */
@@ -123,6 +152,9 @@ function resetExplorationStates() {
   // Reset Sparkle Lottie back to frame 0 so a re-run starts clean.
   if (sparkleLottie) {
     try { sparkleLottie.goToAndStop(0, true); } catch (e) { /* ignore */ }
+  }
+  if (astroSparkleLottie) {
+    try { astroSparkleLottie.goToAndStop(0, true); } catch (e) { /* ignore */ }
   }
   const clarityCaption = document.getElementById("exp-clarity-caption");
   if (clarityCaption) {
@@ -230,6 +262,65 @@ async function runSparkle() {
       resolve();
     };
     startPlayback(SPARKLE_PLAYBACK);
+  });
+}
+
+/* ----------------------------------------------------------- */
+/* 04 — ASTRO SPARKLE                                            */
+/* Astro mascot with sparkle particles emitting outward.        */
+/* Same playback shape as Sparkle: the Lottie is scrubbed by    */
+/* the timeline so the playback bar can pause/restart/scrub.    */
+/* ----------------------------------------------------------- */
+const ASTRO_SPARKLE_KEYFRAMES = {
+  captionIn: 0,
+  lottieIn: 400,
+  // Astro composition runs ~100 frames at 60fps -> ~1.6s, but we
+  // stretch the scrub window slightly so it doesn't feel rushed.
+  lottieOut: 4000,
+  settle: 4500,
+  end: 5000,
+};
+
+const ASTRO_SPARKLE_TOTAL = ASTRO_SPARKLE_KEYFRAMES.end;
+
+function applyAstroSparkleStateAt(t) {
+  if (astroSparkleLottie && astroSparkleLottie.totalFrames) {
+    const { lottieIn, lottieOut } = ASTRO_SPARKLE_KEYFRAMES;
+    let progress;
+    if (t < lottieIn) progress = 0;
+    else if (t > lottieOut) progress = 1;
+    else progress = (t - lottieIn) / (lottieOut - lottieIn);
+
+    const frame = progress * (astroSparkleLottie.totalFrames - 1);
+    try {
+      astroSparkleLottie.goToAndStop(frame, true);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+}
+
+const ASTRO_SPARKLE_PLAYBACK = {
+  id: "astro-sparkle",
+  total: ASTRO_SPARKLE_TOTAL,
+  marks: [ASTRO_SPARKLE_KEYFRAMES.lottieIn],
+  renderAt: applyAstroSparkleStateAt,
+  onComplete: null,
+};
+
+async function runAstroSparkle() {
+  const expEl = document.querySelector(".exp-astro-sparkle");
+  if (!expEl) return;
+
+  initAstroSparkleLottie();
+  setCaption("");
+
+  return new Promise((resolve) => {
+    ASTRO_SPARKLE_PLAYBACK.onComplete = () => {
+      hidePlaybackBar();
+      resolve();
+    };
+    startPlayback(ASTRO_SPARKLE_PLAYBACK);
   });
 }
 
@@ -663,6 +754,7 @@ const RUNNERS = {
   sparkle: runSparkle,
   clarity: runClarity,
   gesture: runGesture,
+  "astro-sparkle": runAstroSparkle,
 };
 
 async function runCreationSequence() {

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Service Cloud — Create an agentic self-service experience</title>
-    <link rel="stylesheet" href="styles.css?v=37" />
+    <link rel="stylesheet" href="styles.css?v=38" />
     <!-- OGL is loaded as an ES module for the Grainient WebGL background.
          Pinned to a specific version to avoid surprise updates. -->
     <script type="importmap">
@@ -37,6 +37,10 @@
         <button class="demo-pill" data-exp="gesture" role="radio" aria-checked="false">
           <span class="demo-pill-num">03</span>
           <span class="demo-pill-name">Gesture</span>
+        </button>
+        <button class="demo-pill" data-exp="astro-sparkle" role="radio" aria-checked="false">
+          <span class="demo-pill-num">04</span>
+          <span class="demo-pill-name">Astro Sparkle</span>
         </button>
       </div>
 
@@ -346,6 +350,15 @@
               <h1 class="exp-sparkle-title" id="exp-sparkle-title">Crafting your help agent</h1>
             </div>
 
+            <!-- =========================================================== -->
+            <!-- ASTRO SPARKLE overlay — Astro PNG with sparkle particles    -->
+            <!-- emitting outward (Ryan's V1 direction). Centered in canvas. -->
+            <!-- =========================================================== -->
+            <div class="exp-astro-sparkle-overlay" id="exp-astro-sparkle-overlay" aria-hidden="true">
+              <div class="exp-astro-sparkle-lottie" id="exp-astro-sparkle-lottie" aria-hidden="true"></div>
+              <h1 class="exp-astro-sparkle-title" id="exp-astro-sparkle-title">Crafting your help agent</h1>
+            </div>
+
             <!-- Morphing card stage — positioned at the same place as the
                  landing's preview card. -->
             <div class="exp-stage" id="exp-stage">
@@ -357,6 +370,8 @@
               </div>
 
               <div class="exp exp-gesture" data-exp="gesture"></div>
+
+              <div class="exp exp-astro-sparkle" data-exp="astro-sparkle"></div>
             </div>
 
             <!-- Subtle top-of-canvas status. Each exploration writes its
@@ -595,6 +610,6 @@ You work on the support team for Pearson Education, an online platform offering 
       </div>
     </div>
 
-    <script src="script.js?v=31"></script>
+    <script src="script.js?v=32"></script>
   </body>
 </html>
