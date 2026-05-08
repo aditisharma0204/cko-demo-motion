@@ -90,13 +90,18 @@ function initAstroSparkleLottie() {
     // files. assetsPath tells lottie-web where to fetch the embedded image
     // referenced inside the JSON (overrides the `u` path baked into the
     // export).
+    // Cache buster — bump the version when the Lottie composition or
+    // its assets change. lottie-web fetches the JSON itself (we can't
+    // version it via the script tag), so this query param is how we
+    // force embedded browsers to skip stale cached copies.
+    const ASTRO_LOTTIE_V = 2;
     astroSparkleLottie = lottie.loadAnimation({
       container,
       renderer: "svg",
       loop: false,
       autoplay: false,
-      path: "assets/astro-sparkle/a/Main Scene.json",
-      assetsPath: "assets/astro-sparkle/i/",
+      path: `assets/astro-sparkle/a/Main Scene.json?v=${ASTRO_LOTTIE_V}`,
+      assetsPath: `assets/astro-sparkle/i/`,
       rendererSettings: {
         preserveAspectRatio: "xMidYMid meet",
         progressiveLoad: true,
