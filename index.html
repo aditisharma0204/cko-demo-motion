@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Service Cloud — Create an agentic self-service experience</title>
-    <link rel="stylesheet" href="styles.css?v=36" />
+    <link rel="stylesheet" href="styles.css?v=37" />
     <!-- OGL is loaded as an ES module for the Grainient WebGL background.
          Pinned to a specific version to avoid surprise updates. -->
     <script type="importmap">
@@ -218,65 +218,153 @@
 
     <!-- ================================================================ -->
     <!-- VIEW 2: CREATING — three explorations, one plays at a time         -->
+    <!--                                                                    -->
+    <!-- Wrapped in the same Service Cloud chrome as landing so the         -->
+    <!-- animations play INSIDE the product canvas (per Ryan's feedback:    -->
+    <!-- "should fit inside the Service Cloud window not take over the      -->
+    <!-- whole viewport"). All exp overlays live inside .page so they're    -->
+    <!-- naturally clipped to the canvas region.                            -->
     <!-- ================================================================ -->
     <div class="view view-creating" id="view-creating" data-exp="sparkle" aria-hidden="true">
-      <!-- Same backdrop as landing -->
-      <div class="page-bg" aria-hidden="true">
-        <div class="glow glow-1"></div>
-        <div class="glow glow-2"></div>
-        <div class="glow glow-3"></div>
-      </div>
+      <div class="app">
+        <!-- Side Nav — kept in lockstep with landing. If you update one,
+             update the other (or extract a partial). -->
+        <aside class="side-nav" aria-label="Primary">
+          <a class="nav-item" href="#" aria-label="Home" data-app="home">
+            <span class="nav-icon"><img src="assets/icons/home.png" alt="" /></span>
+            <span class="nav-label">Home</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Contacts" data-app="contacts">
+            <span class="nav-icon"><img src="assets/icons/contacts.png" alt="" /></span>
+            <span class="nav-label">Contacts</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Accounts" data-app="accounts">
+            <span class="nav-icon"><img src="assets/icons/accounts.png" alt="" /></span>
+            <span class="nav-label">Accounts</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Sales" data-app="sales">
+            <span class="nav-icon"><img src="assets/icons/sales.png" alt="" /></span>
+            <span class="nav-label">Sales</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Marketing" data-app="marketing">
+            <span class="nav-icon"><img src="assets/icons/marketing.png" alt="" /></span>
+            <span class="nav-label">Marketing</span>
+          </a>
+          <a class="nav-item is-selected" href="#" aria-label="Service" aria-current="page" data-app="service">
+            <span class="nav-icon"><img src="assets/icons/service.png" alt="" /></span>
+            <span class="nav-label">Service</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Commerce" data-app="commerce">
+            <span class="nav-icon"><img src="assets/icons/commerce.png" alt="" /></span>
+            <span class="nav-label">Commerce</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Gen Canvas" data-app="gencanvas">
+            <span class="nav-icon"><img src="assets/icons/gencanvas.png" alt="" /></span>
+            <span class="nav-label">Gen Canvas</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="Your Account" data-app="account">
+            <span class="nav-icon"><img src="assets/icons/account.png" alt="" /></span>
+            <span class="nav-label">Your Account</span>
+          </a>
+          <a class="nav-item" href="#" aria-label="More" data-app="more">
+            <span class="nav-icon"><img src="assets/icons/more.png" alt="" /></span>
+            <span class="nav-label">More</span>
+          </a>
+        </aside>
 
-      <!-- =============================================================== -->
-      <!-- GESTURE backdrop — fullscreen WebGL gradient + overlay text.    -->
-      <!-- Sits behind/over the morphing stage, only visible during the    -->
-      <!-- gesture exploration (driven by [data-exp="gesture"]).            -->
-      <!-- =============================================================== -->
-      <div class="exp-gesture-bg" id="exp-gesture-bg" aria-hidden="true"></div>
-      <div class="exp-gesture-overlay" id="exp-gesture-overlay" aria-hidden="true">
-        <h1 class="exp-gesture-title" id="exp-gesture-title" aria-live="polite"></h1>
-      </div>
+        <div class="main">
+          <header class="global-header">
+            <div class="logo" aria-label="Salesforce">
+              <svg viewBox="0 0 273 191" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#00A1E0" d="M113.7 20.8c8.8-9.2 21.1-14.9 34.7-14.9 18.1 0 33.9 10.1 42.3 25.1 7.3-3.3 15.4-5.1 23.9-5.1 32.7 0 59.2 26.8 59.2 59.8s-26.5 59.8-59.2 59.8c-4 0-7.9-.4-11.6-1.2-7.4 13.2-21.5 22.1-37.7 22.1-6.8 0-13.2-1.6-18.9-4.4-7.5 17.6-25 30-45.3 30-21.2 0-39.3-13.4-46.3-32.2-3 .6-6.1.9-9.3.9C20.4 161.7-.1 141.1-.1 115.6c0-17.1 9.2-32 22.9-40-2.8-6.5-4.4-13.6-4.4-21.1C18.4 25 41.8 1.6 70.6 1.6c16.9 0 31.9 8.1 41.4 20.6"/>
+              </svg>
+            </div>
 
-      <!-- =============================================================== -->
-      <!-- SPARKLE overlay — title above the sparkle Lottie, no card chrome -->
-      <!-- Visible only during the sparkle exploration.                     -->
-      <!-- =============================================================== -->
-      <div class="exp-sparkle-overlay" id="exp-sparkle-overlay" aria-hidden="true">
-        <div class="exp-sparkle-lottie" id="exp-sparkle-lottie" aria-hidden="true"></div>
-        <h1 class="exp-sparkle-title" id="exp-sparkle-title">Crafting your help agent</h1>
-      </div>
+            <div class="search">
+              <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 4a6 6 0 1 0 3.8 10.7l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>
+              <input type="search" placeholder="Search…" aria-label="Search" />
+            </div>
 
-      <!-- Morphing card — positioned at the same place as the landing's preview card. -->
-      <div class="exp-stage" id="exp-stage">
-        <!-- =============================================================== -->
-        <!-- 01 SPARKLE — backdrop lives outside the stage (see top of view) -->
-        <!-- The stage entry for sparkle is intentionally empty so the      -->
-        <!-- fullscreen overlay (title + Lottie) is unobstructed.           -->
-        <!-- =============================================================== -->
-        <div class="exp exp-sparkle" data-exp="sparkle"></div>
+            <div class="header-actions">
+              <button class="icon-btn" aria-label="Agentforce">
+                <img src="assets/icons/agentforce.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Add">
+                <img src="assets/icons/add.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Trailhead">
+                <img src="assets/icons/trailhead.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Help">
+                <img src="assets/icons/help.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Setup">
+                <img src="assets/icons/settings.png" alt="" />
+              </button>
+              <button class="icon-btn" aria-label="Notifications">
+                <img src="assets/icons/notification.png" alt="" />
+              </button>
+              <div class="avatar" aria-label="User profile"></div>
+            </div>
+          </header>
 
-        <!-- =============================================================== -->
-        <!-- 02 CLARITY — placeholder shapes resolve into specific content    -->
-        <!-- =============================================================== -->
-        <div class="exp exp-clarity" data-exp="clarity">
-          <!-- Just the Lottie blur, centered on screen, no card chrome -->
-          <div class="exp-clarity-blur" id="exp-clarity-lottie" aria-hidden="true"></div>
-          <!-- Centered, animated caption that cycles three lines. -->
-          <p class="exp-clarity-caption" id="exp-clarity-caption" aria-live="polite"></p>
+          <nav class="tab-bar" aria-label="Application">
+            <div class="app-name">Service Cloud</div>
+            <a class="tab" href="#">Home</a>
+            <a class="tab is-selected" href="#" aria-current="page">
+              Help Agent Creation
+              <span class="tab-close" aria-label="Close tab">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 6 12 12m0-12L6 18"/></svg>
+              </span>
+            </a>
+          </nav>
+
+          <main class="page">
+            <!-- Same soft glow backdrop as landing — sits behind everything
+                 but the gradient + overlays. -->
+            <div class="page-bg" aria-hidden="true">
+              <div class="glow glow-1"></div>
+              <div class="glow glow-2"></div>
+              <div class="glow glow-3"></div>
+            </div>
+
+            <!-- =========================================================== -->
+            <!-- GESTURE backdrop — WebGL gradient + overlay text.            -->
+            <!-- Now scoped to .page so it's clipped to the canvas region    -->
+            <!-- (Service Cloud chrome stays put around it).                  -->
+            <!-- =========================================================== -->
+            <div class="exp-gesture-bg" id="exp-gesture-bg" aria-hidden="true"></div>
+            <div class="exp-gesture-overlay" id="exp-gesture-overlay" aria-hidden="true">
+              <h1 class="exp-gesture-title" id="exp-gesture-title" aria-live="polite"></h1>
+            </div>
+
+            <!-- =========================================================== -->
+            <!-- SPARKLE overlay — Lottie + title above. Centered in canvas. -->
+            <!-- =========================================================== -->
+            <div class="exp-sparkle-overlay" id="exp-sparkle-overlay" aria-hidden="true">
+              <div class="exp-sparkle-lottie" id="exp-sparkle-lottie" aria-hidden="true"></div>
+              <h1 class="exp-sparkle-title" id="exp-sparkle-title">Crafting your help agent</h1>
+            </div>
+
+            <!-- Morphing card stage — positioned at the same place as the
+                 landing's preview card. -->
+            <div class="exp-stage" id="exp-stage">
+              <div class="exp exp-sparkle" data-exp="sparkle"></div>
+
+              <div class="exp exp-clarity" data-exp="clarity">
+                <div class="exp-clarity-blur" id="exp-clarity-lottie" aria-hidden="true"></div>
+                <p class="exp-clarity-caption" id="exp-clarity-caption" aria-live="polite"></p>
+              </div>
+
+              <div class="exp exp-gesture" data-exp="gesture"></div>
+            </div>
+
+            <!-- Subtle top-of-canvas status. Each exploration writes its
+                 own text via setCaption(); empty by default. -->
+            <p class="exp-caption" id="exp-caption" aria-live="polite"></p>
+          </main>
         </div>
-
-        <!-- =============================================================== -->
-        <!-- 03 GESTURE — backdrop lives outside the stage (see top of view) -->
-        <!-- The stage entry for gesture is intentionally empty so the       -->
-        <!-- fullscreen gradient + overlay text are unobstructed.            -->
-        <!-- =============================================================== -->
-        <div class="exp exp-gesture" data-exp="gesture"></div>
       </div>
-
-      <!-- Subtle top-of-screen status. Each exploration writes its own
-           text via setCaption(); empty by default so nothing leaks
-           between runs. -->
-      <p class="exp-caption" id="exp-caption" aria-live="polite"></p>
     </div>
 
     <!-- ================================================================ -->
@@ -507,6 +595,6 @@ You work on the support team for Pearson Education, an online platform offering 
       </div>
     </div>
 
-    <script src="script.js?v=30"></script>
+    <script src="script.js?v=31"></script>
   </body>
 </html>

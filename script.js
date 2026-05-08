@@ -493,11 +493,14 @@ function ensureGestureGrainient() {
     color1: "#066AFE",
     color2: "#E5B9FE",
     color3: "#066AFE",
-    timeSpeed: 1.75,
+    // Per Ryan's feedback: gradient should drift slowly so the type does
+    // the heavy lifting of "exposing what we're building". Was 1.75.
+    timeSpeed: 0.35,
     colorBalance: -0.05,
     warpStrength: 1,
     warpFrequency: 4,
-    warpSpeed: 2,
+    // Slowed warp to match the calmer overall tempo.
+    warpSpeed: 0.8,
     warpAmplitude: 50,
     blendAngle: 0,
     blendSoftness: 0.05,
@@ -529,23 +532,28 @@ function stopGestureGrainient() {
   if (container) container.classList.remove("is-active");
 }
 
-// Gesture is the opening moment of agent creation. A single line
-// composes itself word-by-word over the gradient — no cycling, just
-// this one phrase as the threshold into the experience.
+// Gesture is the opening moment of agent creation. The gradient drifts
+// slowly while a sequence of build-y process lines cycle through —
+// type does the work of exposing what's being assembled (per Ryan's
+// "leverage mostly type to expose what we are building" note).
 //
 // The whole sequence is timeline-driven (see GESTURE_PLAYBACK below) so
 // the same playback bar that controls Clarity also pauses/scrubs
 // Gesture word-by-word.
 const GESTURE_LINES = [
-  "Setting the stage for smarter service",
+  "Composing the experience",
+  "Wiring your channels",
+  "Tuning the tone of voice",
+  "Indexing your knowledge",
+  "Almost ready",
 ];
 
-const GESTURE_INTRO = 500;     // gradient settle before first word
-const GESTURE_STAGGER = 280;   // ms between word reveals
-const GESTURE_HOLD = 2000;     // ms the fully composed line is held
-const GESTURE_EXIT = 700;      // ms for words to fade out
-const GESTURE_BREATH = 200;    // ms gap between lines (n/a for one line)
-const GESTURE_OUTRO = 500;     // ms after last line before handoff
+const GESTURE_INTRO = 600;     // gradient settle before first word
+const GESTURE_STAGGER = 220;   // ms between word reveals (a touch faster so each line lands)
+const GESTURE_HOLD = 900;      // ms the fully composed line is held before fade
+const GESTURE_EXIT = 500;      // ms for words to fade out
+const GESTURE_BREATH = 180;    // ms gap between lines
+const GESTURE_OUTRO = 600;     // ms after last line before handoff
 
 // Build a per-line schedule once. Each entry knows when each of its
 // words appears, when it starts fading, and when it's fully gone.
