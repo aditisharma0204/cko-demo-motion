@@ -173,6 +173,25 @@ function resetExplorationStates() {
     clarityCaption.textContent = "";
   }
 
+  // Process Steps rows — clear inline styles, .is-shimmer, and reset
+  // the per-row data-phase so a re-run starts blank. Also clears the
+  // finale row's sparkle wrappers (primary + 2 companions).
+  const processOverlay = document.getElementById("exp-process-steps-overlay");
+  if (processOverlay) {
+    processOverlay.querySelectorAll(".exp-process-row").forEach((el) => {
+      el.classList.remove("is-shimmer");
+      el.style.opacity = "";
+      el.style.transform = "";
+      el.dataset.phase = "idle";
+      el.querySelectorAll(
+        ".exp-process-sparkle, .exp-process-check, .exp-process-finale-spark"
+      ).forEach((g) => {
+        g.style.opacity = "";
+        g.style.transform = "";
+      });
+    });
+  }
+
   // Re-trigger gesture path animation by clearing inline animation prop.
   // Wrap in try/catch — SVG element style access has bitten us before.
   document.querySelectorAll(".exp-gesture-path").forEach((p) => {
@@ -759,6 +778,347 @@ async function runGesture() {
 }
 
 /* ----------------------------------------------------------- */
+/* 05 — PROCESS STEPS                                            */
+/* One row at a time, Cursor-style "thinking log". Each non-     */
+/* final step cycles enter → working (shimmer) → settle          */
+/* (sparkle→check pop) → exit. The next row replaces it in the   */
+/* same slot. The final row is wordless: a small SF-sparkle      */
+/* "finale" — a primary sparkle does an overshoot entrance and   */
+/* gentle twinkle, with two companion sparkles that stagger in.  */
+/*                                                               */
+/* Everything visible is a pure function of `t` (ms). Scrubbing  */
+/* forward and backward across step boundaries is exact.         */
+/* ----------------------------------------------------------- */
+const PROCESS_STEPS_LINE_COUNT = 3;
+
+// Per-phase durations (ms) for non-final rows. Tuned for a
+// deliberate, readable cadence at the 25px type size — each
+// working phase needs enough time to actually read the line.
+const PROCESS_STEPS_ENTER = 220;
+const PROCESS_STEPS_WORKING = 1800;
+const PROCESS_STEPS_SETTLE = 280;
+const PROCESS_STEPS_EXIT = 220;
+
+// Final row "sparkle finale" budget — kept ~equal to the prior
+// final-row duration (1420ms) so the total run length is stable.
+const PROCESS_STEPS_FINALE_ENTER = 280; // primary scale 0→1.06→1.0 + fade in
+const PROCESS_STEPS_FINALE_HOLD  = 960; // twinkle/rotation drift
+const PROCESS_STEPS_FINALE_EXIT  = 180; // soft fade-out before handoff
+
+const PROCESS_STEPS_NONFINAL_DUR =
+  PROCESS_STEPS_ENTER +
+  PROCESS_STEPS_WORKING +
+  PROCESS_STEPS_SETTLE +
+  PROCESS_STEPS_EXIT; // 2520ms
+const PROCESS_STEPS_FINAL_DUR =
+  PROCESS_STEPS_FINALE_ENTER +
+  PROCESS_STEPS_FINALE_HOLD +
+  PROCESS_STEPS_FINALE_EXIT; // 1420ms
+
+// Companion sparkle stagger — each gets its own short fade-up.
+const PROCESS_STEPS_FINALE_C1_START = 180;
+const PROCESS_STEPS_FINALE_C2_START = 340;
+const PROCESS_STEPS_FINALE_COMPANION_ENTER = 220;
+
+// Translate distances (px) for the row's enter/exit slide. Sized to feel
+// proportional to the larger 36px line-height row.
+const PROCESS_STEPS_ENTER_TY = 12;
+const PROCESS_STEPS_EXIT_TY = 12;
+
+// Start time (ms, relative to t=0) of each row. Rows 0..1 are
+// non-final and take PROCESS_STEPS_NONFINAL_DUR; row 2 is final.
+const PROCESS_STEPS_STARTS = (() => {
+  const out = [];
+  let s = 0;
+  for (let i = 0; i < PROCESS_STEPS_LINE_COUNT; i++) {
+    out.push(s);
+    s +=
+      i < PROCESS_STEPS_LINE_COUNT - 1
+        ? PROCESS_STEPS_NONFINAL_DUR
+        : PROCESS_STEPS_FINAL_DUR;
+  }
+  return out;
+})();
+
+// Total timeline duration: 2 × 2520 + 1420 = 6460ms.
+const PROCESS_STEPS_TOTAL =
+  PROCESS_STEPS_STARTS[PROCESS_STEPS_LINE_COUNT - 1] +
+  PROCESS_STEPS_FINAL_DUR;
+
+// Playback bar tick marks live at the instant each row begins entering.
+const PROCESS_STEPS_STEP_STARTS = [...PROCESS_STEPS_STARTS];
+
+function _psEaseOutCubic(p) {
+  return 1 - Math.pow(1 - p, 3);
+}
+function _psClamp01(p) {
+  return p < 0 ? 0 : p > 1 ? 1 : p;
+}
+
+// Sparkle finale render — pure function of dt (ms relative to the
+// final row's start). Sets opacity/transform on the primary sparkle
+// and both companions; their decorative twinkle (an infinite CSS
+// animation on the inner <img>) composes with this entrance lifecycle
+// so the wrapper opacity going to 0 reliably hides them. Forward and
+// backward scrub both work because we never rely on retained state.
+function _psApplyFinaleRow(row, dt) {
+  // Row container — always opacity 1 once the step is in range; the
+  // child sparkle wrappers carry the visibility lifecycle. Before the
+  // step starts (or after it ends), force the row hidden so the
+  // companions' CSS infinite pulse can't bleed through.
+  let phase = "idle";
+  let primaryOpacity = 0;
+  let primaryScale = 0.4;
+  let primaryRot = 0;
+
+  if (dt < 0) {
+    phase = "idle";
+  } else if (dt < PROCESS_STEPS_FINALE_ENTER) {
+    // Enter: scale 0 → 1.06 (overshoot at p=0.7) → 1.0 settle, fade in.
+    phase = "enter";
+    const p = dt / PROCESS_STEPS_FINALE_ENTER;
+    primaryOpacity = _psEaseOutCubic(p);
+    if (p < 0.7) {
+      primaryScale = 1.06 * _psEaseOutCubic(p / 0.7);
+    } else {
+      primaryScale = 1.06 - 0.06 * ((p - 0.7) / 0.3);
+    }
+  } else if (dt < PROCESS_STEPS_FINALE_ENTER + PROCESS_STEPS_FINALE_HOLD) {
+    // Hold/twinkle: subtle scale pulse + ±3deg rotation drift.
+    phase = "finale";
+    primaryOpacity = 1;
+    const dh = dt - PROCESS_STEPS_FINALE_ENTER;
+    const dhp = dh / PROCESS_STEPS_FINALE_HOLD;
+    primaryScale = 1 + Math.sin(dhp * Math.PI * 2 * 1.5) * 0.02;
+    primaryRot   = Math.sin(dhp * Math.PI * 2 * 1.0) * 3;
+  } else {
+    // Exit: short fade-out before Details takes over.
+    phase = "exit";
+    const ep =
+      (dt - PROCESS_STEPS_FINALE_ENTER - PROCESS_STEPS_FINALE_HOLD) /
+      PROCESS_STEPS_FINALE_EXIT;
+    const e = _psClamp01(ep);
+    primaryOpacity = 1 - _psEaseOutCubic(e);
+    primaryScale = 1 - 0.04 * e;
+  }
+
+  // Companion entrance lifecycles (staggered, share the primary's exit).
+  const companionEntry = (start, dur) => {
+    if (dt < start) return { o: 0, s: 0.4 };
+    const p = _psClamp01((dt - start) / dur);
+    const eased = _psEaseOutCubic(p);
+    return { o: eased, s: 0.4 + 0.6 * eased };
+  };
+  const c1 = companionEntry(
+    PROCESS_STEPS_FINALE_C1_START,
+    PROCESS_STEPS_FINALE_COMPANION_ENTER
+  );
+  const c2 = companionEntry(
+    PROCESS_STEPS_FINALE_C2_START,
+    PROCESS_STEPS_FINALE_COMPANION_ENTER
+  );
+
+  // Apply the same exit fade to companions so the moment ends together.
+  if (phase === "exit") {
+    const ep =
+      (dt - PROCESS_STEPS_FINALE_ENTER - PROCESS_STEPS_FINALE_HOLD) /
+      PROCESS_STEPS_FINALE_EXIT;
+    const fade = 1 - _psEaseOutCubic(_psClamp01(ep));
+    c1.o *= fade;
+    c2.o *= fade;
+  }
+
+  // Row defaults — clear text-row-era styles in case of any leakage.
+  row.style.transform = "translateY(0px)";
+  row.style.opacity = dt < 0 ? "0" : "1";
+  row.dataset.phase = phase;
+  row.classList.remove("is-shimmer");
+
+  const primary = row.querySelector(".exp-process-finale-spark--primary");
+  if (primary) {
+    primary.style.opacity = String(_psClamp01(primaryOpacity));
+    primary.style.transform = `scale(${primaryScale}) rotate(${primaryRot}deg)`;
+  }
+  const c1El = row.querySelector(".exp-process-finale-spark--c1");
+  if (c1El) {
+    c1El.style.opacity = String(_psClamp01(c1.o));
+    c1El.style.transform = `scale(${c1.s})`;
+  }
+  const c2El = row.querySelector(".exp-process-finale-spark--c2");
+  if (c2El) {
+    c2El.style.opacity = String(_psClamp01(c2.o));
+    c2El.style.transform = `scale(${c2.s})`;
+  }
+}
+
+function applyProcessStepsStateAt(t) {
+  const overlay = document.getElementById("exp-process-steps-overlay");
+  if (!overlay) return;
+  const rows = overlay.querySelectorAll(".exp-process-row");
+  if (!rows.length) return;
+
+  rows.forEach((row, i) => {
+    const isFinal = i === PROCESS_STEPS_LINE_COUNT - 1;
+    const dt = t - PROCESS_STEPS_STARTS[i];
+
+    if (isFinal) {
+      // Final row has its own (very different) lifecycle — no slide,
+      // no shimmer, no check; just a centered SF-sparkle finale.
+      _psApplyFinaleRow(row, dt);
+      return;
+    }
+
+    // Defaults: row hidden, primed below its resting position so the
+    // enter animation appears to slide up from below.
+    let opacity = 0;
+    let ty = PROCESS_STEPS_ENTER_TY;
+    let phase = "idle";
+    let shimmer = false;
+    let sparkleOpacity = 1;
+    let sparkleScale = 1;
+    let checkOpacity = 0;
+    let checkScale = 0.6;
+
+    if (dt < 0) {
+      // Step hasn't started yet — keep defaults.
+    } else if (dt < PROCESS_STEPS_ENTER) {
+      // Enter: fade in + slide from +PROCESS_STEPS_ENTER_TY to 0.
+      const p = _psEaseOutCubic(dt / PROCESS_STEPS_ENTER);
+      opacity = p;
+      ty = PROCESS_STEPS_ENTER_TY * (1 - p);
+      phase = "enter";
+    } else {
+      const dt2 = dt - PROCESS_STEPS_ENTER;
+      if (dt2 < PROCESS_STEPS_WORKING) {
+        // Working: full opacity, shimmer on, sparkle pulsing gently.
+        opacity = 1;
+        ty = 0;
+        phase = "working";
+        shimmer = true;
+        // Subtle pulse: ±4% scale, ≤10% opacity travel, ~1.4 cycles
+        // across the working phase. Drives off `t`, no real-time deps.
+        const wave = Math.sin(
+          (dt2 / PROCESS_STEPS_WORKING) * Math.PI * 2 * 1.4
+        );
+        sparkleScale = 1 + wave * 0.04;
+        sparkleOpacity = 1 - Math.abs(wave) * 0.1;
+      } else if (dt2 < PROCESS_STEPS_WORKING + PROCESS_STEPS_SETTLE) {
+        // Settle: sparkle fades out while check pops in (1.0 → 1.08 → 1.0).
+        opacity = 1;
+        ty = 0;
+        phase = "settle";
+        const sp = (dt2 - PROCESS_STEPS_WORKING) / PROCESS_STEPS_SETTLE;
+        if (sp < 0.4) {
+          // 0–40%: cross-fade sparkle → check, check ramps toward 1.10.
+          const k = sp / 0.4;
+          sparkleOpacity = 1 - k;
+          sparkleScale = 1 - 0.3 * k;
+          checkOpacity = k;
+          checkScale = 0.6 + 0.5 * k; // 0.6 → 1.10
+        } else if (sp < 0.7) {
+          // 40–70%: check at peak (1.10 → 1.08), sparkle fully gone.
+          sparkleOpacity = 0;
+          sparkleScale = 0.7;
+          checkOpacity = 1;
+          checkScale = 1.1 - 0.02 * ((sp - 0.4) / 0.3);
+        } else {
+          // 70–100%: check settles to 1.0.
+          sparkleOpacity = 0;
+          sparkleScale = 0.7;
+          checkOpacity = 1;
+          checkScale = 1.08 - 0.08 * ((sp - 0.7) / 0.3);
+        }
+      } else if (
+        dt2 <
+        PROCESS_STEPS_WORKING + PROCESS_STEPS_SETTLE + PROCESS_STEPS_EXIT
+      ) {
+        // Exit: fade out + slide further up by PROCESS_STEPS_EXIT_TY.
+        // Check fades with the row.
+        const ep =
+          (dt2 - PROCESS_STEPS_WORKING - PROCESS_STEPS_SETTLE) /
+          PROCESS_STEPS_EXIT;
+        const eo = _psEaseOutCubic(ep);
+        opacity = 1 - eo;
+        ty = -PROCESS_STEPS_EXIT_TY * eo;
+        phase = "exit";
+        sparkleOpacity = 0;
+        sparkleScale = 0.7;
+        checkOpacity = 1 - eo;
+        checkScale = 1;
+      } else {
+        // Past the row's full lifecycle.
+        opacity = 0;
+        ty = -PROCESS_STEPS_EXIT_TY;
+        phase = "done";
+        sparkleOpacity = 0;
+        checkOpacity = 0;
+      }
+    }
+
+    row.style.opacity = String(opacity);
+    row.style.transform = `translateY(${ty}px)`;
+    row.dataset.phase = phase;
+    row.classList.toggle("is-shimmer", shimmer);
+
+    const sparkle = row.querySelector(".exp-process-sparkle");
+    if (sparkle) {
+      sparkle.style.opacity = String(_psClamp01(sparkleOpacity));
+      sparkle.style.transform = `scale(${sparkleScale})`;
+    }
+    // Final row has no check element; guard the lookup.
+    const check = row.querySelector(".exp-process-check");
+    if (check) {
+      check.style.opacity = String(_psClamp01(checkOpacity));
+      check.style.transform = `scale(${checkScale})`;
+    }
+  });
+}
+
+function resetProcessStepsLines() {
+  const overlay = document.getElementById("exp-process-steps-overlay");
+  if (!overlay) return;
+  overlay.querySelectorAll(".exp-process-row").forEach((el) => {
+    el.classList.remove("is-shimmer");
+    el.style.opacity = "";
+    el.style.transform = "";
+    el.dataset.phase = "idle";
+    el.querySelectorAll(
+      ".exp-process-sparkle, .exp-process-check, .exp-process-finale-spark"
+    ).forEach((g) => {
+      g.style.opacity = "";
+      g.style.transform = "";
+    });
+  });
+}
+
+const PROCESS_STEPS_PLAYBACK = {
+  id: "process-steps",
+  total: PROCESS_STEPS_TOTAL,
+  // One mark per row's enter beat — gives the scrub bar 3 useful stops.
+  marks: [...PROCESS_STEPS_STEP_STARTS],
+  renderAt: applyProcessStepsStateAt,
+  onComplete: null,
+};
+
+async function runProcessSteps() {
+  const expEl = document.querySelector(".exp-process-steps");
+  if (!expEl) return;
+
+  setCaption("");
+  // Make sure we begin at frame 0 — guards against re-runs leaving
+  // stale inline styles or .is-shimmer on the rows.
+  resetProcessStepsLines();
+
+  return new Promise((resolve) => {
+    PROCESS_STEPS_PLAYBACK.onComplete = () => {
+      hidePlaybackBar();
+      resolve();
+    };
+    startPlayback(PROCESS_STEPS_PLAYBACK);
+  });
+}
+
+/* ----------------------------------------------------------- */
 /* Sequence dispatcher                                          */
 /* ----------------------------------------------------------- */
 const RUNNERS = {
@@ -766,6 +1126,7 @@ const RUNNERS = {
   clarity: runClarity,
   gesture: runGesture,
   "astro-sparkle": runAstroSparkle,
+  "process-steps": runProcessSteps,
 };
 
 async function runCreationSequence() {

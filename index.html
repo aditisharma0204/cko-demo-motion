@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Service Cloud — Create an agentic self-service experience</title>
-    <link rel="stylesheet" href="styles.css?v=38" />
+    <link rel="stylesheet" href="styles.css?v=44" />
     <!-- OGL is loaded as an ES module for the Grainient WebGL background.
          Pinned to a specific version to avoid surprise updates. -->
     <script type="importmap">
@@ -41,6 +41,10 @@
         <button class="demo-pill" data-exp="astro-sparkle" role="radio" aria-checked="false">
           <span class="demo-pill-num">04</span>
           <span class="demo-pill-name">Astro Sparkle</span>
+        </button>
+        <button class="demo-pill" data-exp="process-steps" role="radio" aria-checked="false">
+          <span class="demo-pill-num">05</span>
+          <span class="demo-pill-name">Process Steps</span>
         </button>
       </div>
 
@@ -359,6 +363,53 @@
               <h1 class="exp-astro-sparkle-title" id="exp-astro-sparkle-title">Crafting your help agent</h1>
             </div>
 
+            <!-- =========================================================== -->
+            <!-- PROCESS STEPS overlay — Cursor "thinking-log" pattern.       -->
+            <!-- One row visible at a time, in the same fixed slot. Each      -->
+            <!-- step cycles enter → working (shimmer) → settle (check pop)   -->
+            <!-- → exit, then the next replaces it. Final "Ready" stays put   -->
+            <!-- in a confident brand-blue state until handoff.               -->
+            <!-- All rows are absolute-stacked; opacity & translateY are      -->
+            <!-- driven from the timeline `t` in script.js so scrubbing is    -->
+            <!-- exact in both directions.                                    -->
+            <!-- =========================================================== -->
+            <div class="exp-process-steps-overlay" id="exp-process-steps-overlay" aria-hidden="true">
+              <ol class="exp-process-stage" id="exp-process-stage" aria-live="polite">
+                <li class="exp-process-row" data-step="0" data-phase="idle">
+                  <span class="exp-process-glyph" aria-hidden="true">
+                    <img class="exp-process-sparkle" src="assets/sparkle-sf.png" alt="" />
+                    <svg class="exp-process-check" viewBox="0 0 14 14"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m3 7.5 2.6 2.6L11 4.4"/></svg>
+                  </span>
+                  <span class="exp-process-text">Reading your knowledge base</span>
+                </li>
+                <li class="exp-process-row" data-step="1" data-phase="idle">
+                  <span class="exp-process-glyph" aria-hidden="true">
+                    <img class="exp-process-sparkle" src="assets/sparkle-sf.png" alt="" />
+                    <svg class="exp-process-check" viewBox="0 0 14 14"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m3 7.5 2.6 2.6L11 4.4"/></svg>
+                  </span>
+                  <span class="exp-process-text">Drafting agent personality</span>
+                </li>
+                <!-- Final row is a wordless sparkle finale — a primary SF      -->
+                <!-- sparkle (with a brief overshoot enter + gentle twinkle)    -->
+                <!-- and two small companion sparkles that stagger in around    -->
+                <!-- it. Everything is t-driven from JS for scrub safety; the   -->
+                <!-- companions' decorative pulse is a stateless CSS infinite. -->
+                <li class="exp-process-row exp-process-row-final" data-step="2" data-phase="idle">
+                  <span class="exp-process-finale" aria-hidden="true">
+                    <span class="exp-process-finale-spark exp-process-finale-spark--primary">
+                      <img class="exp-process-finale-img" src="assets/sparkle-sf.png" alt="" />
+                    </span>
+                    <span class="exp-process-finale-spark exp-process-finale-spark--c1">
+                      <img class="exp-process-finale-img" src="assets/sparkle-sf.png" alt="" />
+                    </span>
+                    <span class="exp-process-finale-spark exp-process-finale-spark--c2">
+                      <img class="exp-process-finale-img" src="assets/sparkle-sf.png" alt="" />
+                    </span>
+                  </span>
+                </li>
+              </ol>
+            </div>
+
             <!-- Morphing card stage — positioned at the same place as the
                  landing's preview card. -->
             <div class="exp-stage" id="exp-stage">
@@ -372,6 +423,8 @@
               <div class="exp exp-gesture" data-exp="gesture"></div>
 
               <div class="exp exp-astro-sparkle" data-exp="astro-sparkle"></div>
+
+              <div class="exp exp-process-steps" data-exp="process-steps"></div>
             </div>
 
             <!-- Subtle top-of-canvas status. Each exploration writes its
@@ -610,6 +663,6 @@ You work on the support team for Pearson Education, an online platform offering 
       </div>
     </div>
 
-    <script src="script.js?v=34"></script>
+    <script src="script.js?v=40"></script>
   </body>
 </html>

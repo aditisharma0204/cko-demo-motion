@@ -42,6 +42,17 @@
      Used by .view to push the design canvas below the strip and by
      .demo-toolbar to size itself. */
   --demo-bar-height: 48px;
+
+  /* ---------------------------------------------------------- */
+  /* Shiny-text gradient stops — used by exploration 05 (process */
+  /* steps) for the working-phase shimmer. Tweak intensity here. */
+  /*   --shiny-base : muted text color when the row is at rest   */
+  /*   --shiny-shine: the highlight that sweeps across the text  */
+  /* The sweep itself is defined in @keyframes shiny-sweep below */
+  /* the 05 — PROCESS STEPS section.                             */
+  /* ---------------------------------------------------------- */
+  --shiny-base: rgba(0, 30, 91, 0.55);
+  --shiny-shine: rgba(255, 255, 255, 0.95);
 }
 
 * {
@@ -1043,6 +1054,7 @@ body.is-on-details .demo-toolbar .demo-reset svg {
 .view-creating[data-exp="sparkle"]  .exp-sparkle  { display: flex; }
 .view-creating[data-exp="clarity"]  .exp-clarity  { display: flex; }
 .view-creating[data-exp="gesture"]  .exp-gesture  { display: flex; }
+.view-creating[data-exp="process-steps"] .exp-process-steps { display: flex; }
 
 /* The morphing card — same dimensions as the landing's preview card */
 .exp-card {
@@ -1384,6 +1396,200 @@ body.is-on-details .demo-toolbar .demo-reset svg {
   opacity: 1;
   transform: translateY(0);
   filter: blur(0);
+}
+
+/* ============================================================ */
+/* 05 — PROCESS STEPS                                             */
+/* One row at a time, Cursor-style "thinking log". Each step      */
+/* cycles enter → working (shimmer) → settle (sparkle→check pop)  */
+/* → exit, then the next row replaces it in the same slot. The    */
+/* final "Ready" row stays revealed in a confident brand-blue     */
+/* state. Per-row opacity & translateY are written from JS each   */
+/* frame so scrubbing works in both directions; the shiny-text    */
+/* sweep itself is the only CSS-driven animation (decorative,     */
+/* stateless — toggled on/off via .is-shimmer derived from t).    */
+/* ============================================================ */
+.exp-process-steps-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 480ms ease, visibility 0s linear 480ms;
+  padding: 0 32px;
+}
+
+.view-creating[data-exp="process-steps"] .exp-process-steps-overlay {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 480ms ease, visibility 0s linear 0s;
+}
+
+/* Stage = a fixed slot all rows share. Rows are absolutely stacked
+   on top of each other and only one is visible at a time. */
+.exp-process-stage {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  width: 560px;
+  height: 36px;
+  font-family: var(--font-family-base);
+}
+
+.exp-process-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-size: 25px;
+  line-height: 36px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--shiny-base);
+  white-space: nowrap;
+  /* Initial state — JS overrides via inline opacity/transform. */
+  opacity: 0;
+  transform: translateY(12px);
+  /* No CSS transitions: state is a pure function of timeline `t`. */
+}
+
+.exp-process-glyph {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exp-process-sparkle,
+.exp-process-check {
+  position: absolute;
+  inset: 0;
+  width: 22px;
+  height: 22px;
+  /* Inline opacity/transform are set per-frame from t; no CSS
+     transitions here either. */
+}
+
+.exp-process-sparkle {
+  /* PNG carries its own brand gradient (blue → purple → pink), so no
+     color is set here. Soft neutral halo lets the multi-color glyph
+     read on the light backdrop without competing with its own hues. */
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(80, 60, 200, 0.22));
+}
+
+.exp-process-check {
+  color: var(--slds-blue-50);
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* Shiny-text shimmer — applied to the active row's text during the
+   "working" phase only. The sweep itself is purely decorative and
+   state-free, so an infinite CSS animation is safe under scrubbing. */
+.exp-process-row.is-shimmer .exp-process-text {
+  background-image: linear-gradient(
+    120deg,
+    var(--shiny-base) 0%,
+    var(--shiny-base) 35%,
+    var(--shiny-shine) 50%,
+    var(--shiny-base) 65%,
+    var(--shiny-base) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shiny-sweep 2.5s linear infinite;
+}
+
+@keyframes shiny-sweep {
+  0%   { background-position: 150% center; }
+  100% { background-position: -50% center; }
+}
+
+/* Final row = wordless sparkle finale. The text-row text/glyph
+   styles above don't apply — this row hosts a primary SF sparkle
+   PNG plus two staggered companion sparkles. All visibility is
+   driven per-frame from `t` in JS (see _psApplyFinaleRow); the
+   companions' decorative pulse is a stateless CSS infinite. */
+.exp-process-finale {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: block;
+  /* Soft glow under the sparkle moment — uses brand blue at low
+     opacity so the gradient PNG carries the color story. */
+  filter: drop-shadow(0 0 14px rgba(6, 106, 254, 0.18));
+}
+
+.exp-process-finale-spark {
+  position: absolute;
+  display: block;
+  /* JS writes opacity + transform (scale/rotate) per frame. */
+  opacity: 0;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.exp-process-finale-spark--primary {
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+}
+
+/* Companion 1 — lower-left, smaller, staggered in. */
+.exp-process-finale-spark--c1 {
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  margin: calc(-15px + 14px) 0 0 calc(-15px - 82px);
+}
+
+/* Companion 2 — upper-right, slightly larger, last to arrive. */
+.exp-process-finale-spark--c2 {
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: calc(-17px - 18px) 0 0 calc(-17px + 90px);
+}
+
+.exp-process-finale-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Companion twinkle — purely decorative, stateless, scrub-safe.
+   Wrapper opacity (the entrance lifecycle) is t-driven from JS;
+   the inner img animates transform + opacity for a soft pulse
+   that composes multiplicatively with the wrapper opacity. */
+.exp-process-finale-spark--c1 .exp-process-finale-img {
+  animation: process-finale-twinkle 1800ms ease-in-out infinite;
+}
+
+.exp-process-finale-spark--c2 .exp-process-finale-img {
+  animation: process-finale-twinkle 2200ms ease-in-out -800ms infinite;
+}
+
+@keyframes process-finale-twinkle {
+  0%, 100% { transform: scale(1) rotate(-3deg); opacity: 1; }
+  50%      { transform: scale(1.1) rotate(3deg); opacity: 0.55; }
 }
 
 /* ============================================================ */
