@@ -85,12 +85,18 @@ function initAstroSparkleLottie() {
   const container = document.getElementById("exp-astro-sparkle-lottie");
   if (!container) return null;
   try {
+    // .lottie files are zip archives; we unpacked Astro Sparkle.lottie into
+    // assets/astro-sparkle/ so the JSON + image asset are served as plain
+    // files. assetsPath tells lottie-web where to fetch the embedded image
+    // referenced inside the JSON (overrides the `u` path baked into the
+    // export).
     astroSparkleLottie = lottie.loadAnimation({
       container,
       renderer: "svg",
       loop: false,
       autoplay: false,
-      path: "assets/Astro-Sparkle-Motion.json",
+      path: "assets/astro-sparkle/a/Main Scene.json",
+      assetsPath: "assets/astro-sparkle/i/",
       rendererSettings: {
         preserveAspectRatio: "xMidYMid meet",
         progressiveLoad: true,
