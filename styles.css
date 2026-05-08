@@ -1400,14 +1400,15 @@ body.is-on-details .demo-toolbar .demo-reset svg {
 
 /* ============================================================ */
 /* 05 — PROCESS STEPS                                             */
-/* One row at a time, Cursor-style "thinking log". Each step      */
+/* One row at a time (with a brief cross-fade overlap between     */
+/* adjacent steps), Cursor-style "thinking log". Each step        */
 /* cycles enter → working (shimmer) → settle (sparkle→check pop)  */
-/* → exit, then the next row replaces it in the same slot. The    */
-/* final "Ready" row stays revealed in a confident brand-blue     */
-/* state. Per-row opacity & translateY are written from JS each   */
-/* frame so scrubbing works in both directions; the shiny-text    */
-/* sweep itself is the only CSS-driven animation (decorative,     */
-/* stateless — toggled on/off via .is-shimmer derived from t).    */
+/* → exit. Per-row opacity, translateY, scale and glyph state     */
+/* are written from JS each frame so scrubbing works in both      */
+/* directions — including the overlap window where two rows are   */
+/* simultaneously visible. The shiny-text sweep is the only       */
+/* CSS-driven animation (decorative, stateless — toggled on/off   */
+/* via .is-shimmer derived from t).                               */
 /* ============================================================ */
 .exp-process-steps-overlay {
   position: absolute;
@@ -1430,14 +1431,15 @@ body.is-on-details .demo-toolbar .demo-reset svg {
 }
 
 /* Stage = a fixed slot all rows share. Rows are absolutely stacked
-   on top of each other and only one is visible at a time. */
+   on top of each other; the active step (and, briefly, its
+   neighbor during the overlap window) is the only one visible. */
 .exp-process-stage {
   list-style: none;
   margin: 0;
   padding: 0;
   position: relative;
-  width: 560px;
-  height: 36px;
+  width: 660px;
+  height: 42px;
   font-family: var(--font-family-base);
 }
 
@@ -1447,23 +1449,24 @@ body.is-on-details .demo-toolbar .demo-reset svg {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  font-size: 25px;
-  line-height: 36px;
+  gap: 16px;
+  font-size: 30px;
+  line-height: 42px;
   font-weight: 500;
   letter-spacing: -0.005em;
   color: var(--shiny-base);
   white-space: nowrap;
   /* Initial state — JS overrides via inline opacity/transform. */
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(14px) scale(0.985);
+  transform-origin: center center;
   /* No CSS transitions: state is a pure function of timeline `t`. */
 }
 
 .exp-process-glyph {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -1474,8 +1477,8 @@ body.is-on-details .demo-toolbar .demo-reset svg {
 .exp-process-check {
   position: absolute;
   inset: 0;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   /* Inline opacity/transform are set per-frame from t; no CSS
      transitions here either. */
 }
@@ -1485,7 +1488,7 @@ body.is-on-details .demo-toolbar .demo-reset svg {
      color is set here. Soft neutral halo lets the multi-color glyph
      read on the light backdrop without competing with its own hues. */
   object-fit: contain;
-  filter: drop-shadow(0 0 4px rgba(80, 60, 200, 0.22));
+  filter: drop-shadow(0 0 5px rgba(80, 60, 200, 0.22));
 }
 
 .exp-process-check {
@@ -1495,8 +1498,10 @@ body.is-on-details .demo-toolbar .demo-reset svg {
 }
 
 /* Shiny-text shimmer — applied to the active row's text during the
-   "working" phase only. The sweep itself is purely decorative and
-   state-free, so an infinite CSS animation is safe under scrubbing. */
+   "working" phase only. Slightly slower sweep (2.8s) reads more
+   "ongoing thought" than "looping animation". The sweep itself is
+   purely decorative and state-free, so an infinite CSS animation
+   is safe under scrubbing. */
 .exp-process-row.is-shimmer .exp-process-text {
   background-image: linear-gradient(
     120deg,
@@ -1511,85 +1516,12 @@ body.is-on-details .demo-toolbar .demo-reset svg {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: shiny-sweep 2.5s linear infinite;
+  animation: shiny-sweep 2.8s linear infinite;
 }
 
 @keyframes shiny-sweep {
   0%   { background-position: 150% center; }
   100% { background-position: -50% center; }
-}
-
-/* Final row = wordless sparkle finale. The text-row text/glyph
-   styles above don't apply — this row hosts a primary SF sparkle
-   PNG plus two staggered companion sparkles. All visibility is
-   driven per-frame from `t` in JS (see _psApplyFinaleRow); the
-   companions' decorative pulse is a stateless CSS infinite. */
-.exp-process-finale {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  display: block;
-  /* Soft glow under the sparkle moment — uses brand blue at low
-     opacity so the gradient PNG carries the color story. */
-  filter: drop-shadow(0 0 14px rgba(6, 106, 254, 0.18));
-}
-
-.exp-process-finale-spark {
-  position: absolute;
-  display: block;
-  /* JS writes opacity + transform (scale/rotate) per frame. */
-  opacity: 0;
-  transform-origin: center center;
-  will-change: transform, opacity;
-}
-
-.exp-process-finale-spark--primary {
-  top: 50%;
-  left: 50%;
-  width: 64px;
-  height: 64px;
-  margin: -32px 0 0 -32px;
-}
-
-/* Companion 1 — lower-left, smaller, staggered in. */
-.exp-process-finale-spark--c1 {
-  top: 50%;
-  left: 50%;
-  width: 30px;
-  height: 30px;
-  margin: calc(-15px + 14px) 0 0 calc(-15px - 82px);
-}
-
-/* Companion 2 — upper-right, slightly larger, last to arrive. */
-.exp-process-finale-spark--c2 {
-  top: 50%;
-  left: 50%;
-  width: 34px;
-  height: 34px;
-  margin: calc(-17px - 18px) 0 0 calc(-17px + 90px);
-}
-
-.exp-process-finale-img {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* Companion twinkle — purely decorative, stateless, scrub-safe.
-   Wrapper opacity (the entrance lifecycle) is t-driven from JS;
-   the inner img animates transform + opacity for a soft pulse
-   that composes multiplicatively with the wrapper opacity. */
-.exp-process-finale-spark--c1 .exp-process-finale-img {
-  animation: process-finale-twinkle 1800ms ease-in-out infinite;
-}
-
-.exp-process-finale-spark--c2 .exp-process-finale-img {
-  animation: process-finale-twinkle 2200ms ease-in-out -800ms infinite;
-}
-
-@keyframes process-finale-twinkle {
-  0%, 100% { transform: scale(1) rotate(-3deg); opacity: 1; }
-  50%      { transform: scale(1.1) rotate(3deg); opacity: 0.55; }
 }
 
 /* ============================================================ */

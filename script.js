@@ -174,8 +174,7 @@ function resetExplorationStates() {
   }
 
   // Process Steps rows — clear inline styles, .is-shimmer, and reset
-  // the per-row data-phase so a re-run starts blank. Also clears the
-  // finale row's sparkle wrappers (primary + 2 companions).
+  // the per-row data-phase so a re-run starts blank.
   const processOverlay = document.getElementById("exp-process-steps-overlay");
   if (processOverlay) {
     processOverlay.querySelectorAll(".exp-process-row").forEach((el) => {
@@ -184,7 +183,7 @@ function resetExplorationStates() {
       el.style.transform = "";
       el.dataset.phase = "idle";
       el.querySelectorAll(
-        ".exp-process-sparkle, .exp-process-check, .exp-process-finale-spark"
+        ".exp-process-sparkle, .exp-process-check"
       ).forEach((g) => {
         g.style.opacity = "";
         g.style.transform = "";
@@ -779,176 +778,112 @@ async function runGesture() {
 
 /* ----------------------------------------------------------- */
 /* 05 — PROCESS STEPS                                            */
-/* One row at a time, Cursor-style "thinking log". Each non-     */
-/* final step cycles enter → working (shimmer) → settle          */
-/* (sparkle→check pop) → exit. The next row replaces it in the   */
-/* same slot. The final row is wordless: a small SF-sparkle      */
-/* "finale" — a primary sparkle does an overshoot entrance and   */
-/* gentle twinkle, with two companion sparkles that stagger in.  */
+/* Three text rows played in sequence (Cursor-style "thinking    */
+/* log"). Each step cycles enter → working (shimmer) → settle    */
+/* (sparkle→check pop) → exit, with a small dead-air gap between */
+/* steps so each sentence fully clears before the next arrives — */
+/* avoids the two rows visually colliding (they share the same   */
+/* absolute slot).                                               */
 /*                                                               */
 /* Everything visible is a pure function of `t` (ms). Scrubbing  */
-/* forward and backward across step boundaries is exact.         */
+/* forward and backward across step boundaries is exact, because */
+/* every row's state is computed solely from                     */
+/* dt = t − stepStart with no retained state between frames.     */
 /* ----------------------------------------------------------- */
 const PROCESS_STEPS_LINE_COUNT = 3;
 
-// Per-phase durations (ms) for non-final rows. Tuned for a
-// deliberate, readable cadence at the 25px type size — each
-// working phase needs enough time to actually read the line.
+// Per-phase durations (ms). Tuned for a deliberate, readable
+// cadence at the 30px type size — the working phase needs enough
+// time to actually read the line.
 const PROCESS_STEPS_ENTER = 220;
 const PROCESS_STEPS_WORKING = 1800;
 const PROCESS_STEPS_SETTLE = 280;
 const PROCESS_STEPS_EXIT = 220;
 
-// Final row "sparkle finale" budget — kept ~equal to the prior
-// final-row duration (1420ms) so the total run length is stable.
-const PROCESS_STEPS_FINALE_ENTER = 280; // primary scale 0→1.06→1.0 + fade in
-const PROCESS_STEPS_FINALE_HOLD  = 960; // twinkle/rotation drift
-const PROCESS_STEPS_FINALE_EXIT  = 180; // soft fade-out before handoff
-
-const PROCESS_STEPS_NONFINAL_DUR =
+const PROCESS_STEPS_STEP_DUR =
   PROCESS_STEPS_ENTER +
   PROCESS_STEPS_WORKING +
   PROCESS_STEPS_SETTLE +
   PROCESS_STEPS_EXIT; // 2520ms
-const PROCESS_STEPS_FINAL_DUR =
-  PROCESS_STEPS_FINALE_ENTER +
-  PROCESS_STEPS_FINALE_HOLD +
-  PROCESS_STEPS_FINALE_EXIT; // 1420ms
 
-// Companion sparkle stagger — each gets its own short fade-up.
-const PROCESS_STEPS_FINALE_C1_START = 180;
-const PROCESS_STEPS_FINALE_C2_START = 340;
-const PROCESS_STEPS_FINALE_COMPANION_ENTER = 220;
+// Cross-step gap. After one step's `exit` ends, wait this many ms
+// of dead air before the next step's `enter` begins. Gives the eye
+// a clear "the previous sentence is done" beat and avoids the two
+// rows visually colliding (they share the same absolute slot).
+// Stride between consecutive step starts is (STEP_DUR + GAP).
+const PROCESS_STEPS_GAP = 180;
+const PROCESS_STEPS_STRIDE = PROCESS_STEPS_STEP_DUR + PROCESS_STEPS_GAP; // 2700ms
 
-// Translate distances (px) for the row's enter/exit slide. Sized to feel
-// proportional to the larger 36px line-height row.
-const PROCESS_STEPS_ENTER_TY = 12;
-const PROCESS_STEPS_EXIT_TY = 12;
+// Tail buffer after Step 3's exit ends, before the timeline closes
+// and Details takes over — keeps the handoff from feeling cut off.
+const PROCESS_STEPS_TAIL = 200;
 
-// Start time (ms, relative to t=0) of each row. Rows 0..1 are
-// non-final and take PROCESS_STEPS_NONFINAL_DUR; row 2 is final.
+// Translate distances (px) for the row's enter/exit slide. Sized to
+// feel proportional to the larger 42px line-height row.
+const PROCESS_STEPS_ENTER_TY = 14;
+const PROCESS_STEPS_EXIT_TY = 14;
+
+// Subtle scale companions to the slide. Barely perceptible in
+// isolation; you only feel them in aggregate.
+const PROCESS_STEPS_ENTER_SCALE_FROM = 0.985;
+const PROCESS_STEPS_EXIT_SCALE_TO   = 1.005;
+
+// Start time (ms, relative to t=0) of each row.
 const PROCESS_STEPS_STARTS = (() => {
   const out = [];
-  let s = 0;
   for (let i = 0; i < PROCESS_STEPS_LINE_COUNT; i++) {
-    out.push(s);
-    s +=
-      i < PROCESS_STEPS_LINE_COUNT - 1
-        ? PROCESS_STEPS_NONFINAL_DUR
-        : PROCESS_STEPS_FINAL_DUR;
+    out.push(i * PROCESS_STEPS_STRIDE);
   }
   return out;
 })();
 
-// Total timeline duration: 2 × 2520 + 1420 = 6460ms.
+// Total timeline duration: last step's start + its full duration + tail.
+// 2 × 2700 + 2520 + 200 = 8120ms.
 const PROCESS_STEPS_TOTAL =
   PROCESS_STEPS_STARTS[PROCESS_STEPS_LINE_COUNT - 1] +
-  PROCESS_STEPS_FINAL_DUR;
+  PROCESS_STEPS_STEP_DUR +
+  PROCESS_STEPS_TAIL;
 
 // Playback bar tick marks live at the instant each row begins entering.
 const PROCESS_STEPS_STEP_STARTS = [...PROCESS_STEPS_STARTS];
 
-function _psEaseOutCubic(p) {
-  return 1 - Math.pow(1 - p, 3);
+// Cubic-bezier evaluator (Newton-Raphson, same approach as CSS).
+// Returns a function that maps x ∈ [0,1] → y for the curve through
+// (0,0), (p1x,p1y), (p2x,p2y), (1,1). Cached per call site.
+function _psCubicBezier(p1x, p1y, p2x, p2y) {
+  const cx = 3 * p1x;
+  const bx = 3 * (p2x - p1x) - cx;
+  const ax = 1 - cx - bx;
+  const cy = 3 * p1y;
+  const by = 3 * (p2y - p1y) - cy;
+  const ay = 1 - cy - by;
+  const sampleX  = (t) => ((ax * t + bx) * t + cx) * t;
+  const sampleY  = (t) => ((ay * t + by) * t + cy) * t;
+  const sampleDX = (t) => (3 * ax * t + 2 * bx) * t + cx;
+  return (x) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 8; i++) {
+      const cur = sampleX(t) - x;
+      if (Math.abs(cur) < 1e-5) break;
+      const dx = sampleDX(t);
+      if (Math.abs(dx) < 1e-6) break;
+      t -= cur / dx;
+    }
+    return sampleY(t);
+  };
 }
+// Refined easings per the polish brief. Keep these as module-level
+// singletons so we don't reallocate on every frame.
+const _psEaseEnter      = _psCubicBezier(0.32, 0.72, 0,    1);    // iOS-like spring settle
+const _psEaseExit       = _psCubicBezier(0.6,  0,    0.78, 0);    // smooth pull-out
+const _psEasePopUp      = _psCubicBezier(0.34, 1.56, 0.64, 1);    // overshoot
+const _psEasePopBack    = _psCubicBezier(0.4,  0,    0.6,  1);    // smooth come-back
+const _psEaseInOutCubic = _psCubicBezier(0.4,  0,    0.6,  1);    // shared smooth fade
+
 function _psClamp01(p) {
   return p < 0 ? 0 : p > 1 ? 1 : p;
-}
-
-// Sparkle finale render — pure function of dt (ms relative to the
-// final row's start). Sets opacity/transform on the primary sparkle
-// and both companions; their decorative twinkle (an infinite CSS
-// animation on the inner <img>) composes with this entrance lifecycle
-// so the wrapper opacity going to 0 reliably hides them. Forward and
-// backward scrub both work because we never rely on retained state.
-function _psApplyFinaleRow(row, dt) {
-  // Row container — always opacity 1 once the step is in range; the
-  // child sparkle wrappers carry the visibility lifecycle. Before the
-  // step starts (or after it ends), force the row hidden so the
-  // companions' CSS infinite pulse can't bleed through.
-  let phase = "idle";
-  let primaryOpacity = 0;
-  let primaryScale = 0.4;
-  let primaryRot = 0;
-
-  if (dt < 0) {
-    phase = "idle";
-  } else if (dt < PROCESS_STEPS_FINALE_ENTER) {
-    // Enter: scale 0 → 1.06 (overshoot at p=0.7) → 1.0 settle, fade in.
-    phase = "enter";
-    const p = dt / PROCESS_STEPS_FINALE_ENTER;
-    primaryOpacity = _psEaseOutCubic(p);
-    if (p < 0.7) {
-      primaryScale = 1.06 * _psEaseOutCubic(p / 0.7);
-    } else {
-      primaryScale = 1.06 - 0.06 * ((p - 0.7) / 0.3);
-    }
-  } else if (dt < PROCESS_STEPS_FINALE_ENTER + PROCESS_STEPS_FINALE_HOLD) {
-    // Hold/twinkle: subtle scale pulse + ±3deg rotation drift.
-    phase = "finale";
-    primaryOpacity = 1;
-    const dh = dt - PROCESS_STEPS_FINALE_ENTER;
-    const dhp = dh / PROCESS_STEPS_FINALE_HOLD;
-    primaryScale = 1 + Math.sin(dhp * Math.PI * 2 * 1.5) * 0.02;
-    primaryRot   = Math.sin(dhp * Math.PI * 2 * 1.0) * 3;
-  } else {
-    // Exit: short fade-out before Details takes over.
-    phase = "exit";
-    const ep =
-      (dt - PROCESS_STEPS_FINALE_ENTER - PROCESS_STEPS_FINALE_HOLD) /
-      PROCESS_STEPS_FINALE_EXIT;
-    const e = _psClamp01(ep);
-    primaryOpacity = 1 - _psEaseOutCubic(e);
-    primaryScale = 1 - 0.04 * e;
-  }
-
-  // Companion entrance lifecycles (staggered, share the primary's exit).
-  const companionEntry = (start, dur) => {
-    if (dt < start) return { o: 0, s: 0.4 };
-    const p = _psClamp01((dt - start) / dur);
-    const eased = _psEaseOutCubic(p);
-    return { o: eased, s: 0.4 + 0.6 * eased };
-  };
-  const c1 = companionEntry(
-    PROCESS_STEPS_FINALE_C1_START,
-    PROCESS_STEPS_FINALE_COMPANION_ENTER
-  );
-  const c2 = companionEntry(
-    PROCESS_STEPS_FINALE_C2_START,
-    PROCESS_STEPS_FINALE_COMPANION_ENTER
-  );
-
-  // Apply the same exit fade to companions so the moment ends together.
-  if (phase === "exit") {
-    const ep =
-      (dt - PROCESS_STEPS_FINALE_ENTER - PROCESS_STEPS_FINALE_HOLD) /
-      PROCESS_STEPS_FINALE_EXIT;
-    const fade = 1 - _psEaseOutCubic(_psClamp01(ep));
-    c1.o *= fade;
-    c2.o *= fade;
-  }
-
-  // Row defaults — clear text-row-era styles in case of any leakage.
-  row.style.transform = "translateY(0px)";
-  row.style.opacity = dt < 0 ? "0" : "1";
-  row.dataset.phase = phase;
-  row.classList.remove("is-shimmer");
-
-  const primary = row.querySelector(".exp-process-finale-spark--primary");
-  if (primary) {
-    primary.style.opacity = String(_psClamp01(primaryOpacity));
-    primary.style.transform = `scale(${primaryScale}) rotate(${primaryRot}deg)`;
-  }
-  const c1El = row.querySelector(".exp-process-finale-spark--c1");
-  if (c1El) {
-    c1El.style.opacity = String(_psClamp01(c1.o));
-    c1El.style.transform = `scale(${c1.s})`;
-  }
-  const c2El = row.querySelector(".exp-process-finale-spark--c2");
-  if (c2El) {
-    c2El.style.opacity = String(_psClamp01(c2.o));
-    c2El.style.transform = `scale(${c2.s})`;
-  }
 }
 
 function applyProcessStepsStateAt(t) {
@@ -958,88 +893,96 @@ function applyProcessStepsStateAt(t) {
   if (!rows.length) return;
 
   rows.forEach((row, i) => {
-    const isFinal = i === PROCESS_STEPS_LINE_COUNT - 1;
     const dt = t - PROCESS_STEPS_STARTS[i];
 
-    if (isFinal) {
-      // Final row has its own (very different) lifecycle — no slide,
-      // no shimmer, no check; just a centered SF-sparkle finale.
-      _psApplyFinaleRow(row, dt);
-      return;
-    }
-
-    // Defaults: row hidden, primed below its resting position so the
-    // enter animation appears to slide up from below.
+    // Defaults: row hidden, primed below its resting position with a
+    // hair of scale-down so the enter animation slides up + grows in.
     let opacity = 0;
     let ty = PROCESS_STEPS_ENTER_TY;
+    let scale = PROCESS_STEPS_ENTER_SCALE_FROM;
     let phase = "idle";
     let shimmer = false;
     let sparkleOpacity = 1;
     let sparkleScale = 1;
     let checkOpacity = 0;
-    let checkScale = 0.6;
+    let checkScale = 1;
 
     if (dt < 0) {
       // Step hasn't started yet — keep defaults.
     } else if (dt < PROCESS_STEPS_ENTER) {
-      // Enter: fade in + slide from +PROCESS_STEPS_ENTER_TY to 0.
-      const p = _psEaseOutCubic(dt / PROCESS_STEPS_ENTER);
+      // Enter: opacity 0 → 1, ty +14 → 0, scale 0.985 → 1.0.
+      const p = _psEaseEnter(dt / PROCESS_STEPS_ENTER);
       opacity = p;
       ty = PROCESS_STEPS_ENTER_TY * (1 - p);
+      scale = PROCESS_STEPS_ENTER_SCALE_FROM
+        + (1 - PROCESS_STEPS_ENTER_SCALE_FROM) * p;
       phase = "enter";
     } else {
       const dt2 = dt - PROCESS_STEPS_ENTER;
       if (dt2 < PROCESS_STEPS_WORKING) {
         // Working: full opacity, shimmer on, sparkle pulsing gently.
+        // Softer ±3% scale at ~0.6 of a full cycle across the phase
+        // (1.2 × π) so the pulse doesn't quite complete — reads
+        // "ongoing thought", not "looping animation".
         opacity = 1;
         ty = 0;
+        scale = 1;
         phase = "working";
         shimmer = true;
-        // Subtle pulse: ±4% scale, ≤10% opacity travel, ~1.4 cycles
-        // across the working phase. Drives off `t`, no real-time deps.
-        const wave = Math.sin(
-          (dt2 / PROCESS_STEPS_WORKING) * Math.PI * 2 * 1.4
-        );
-        sparkleScale = 1 + wave * 0.04;
-        sparkleOpacity = 1 - Math.abs(wave) * 0.1;
+        const wp = dt2 / PROCESS_STEPS_WORKING;
+        sparkleScale = 1 + 0.03 * Math.sin(wp * Math.PI * 1.2);
+        sparkleOpacity = 1;
       } else if (dt2 < PROCESS_STEPS_WORKING + PROCESS_STEPS_SETTLE) {
-        // Settle: sparkle fades out while check pops in (1.0 → 1.08 → 1.0).
+        // Settle: sparkle fades out (0–70% of settle), check fades
+        // in (30–100% of settle); they overlap in the 30–70% middle
+        // but neither is at 0% nor 100% opacity simultaneously.
+        // Check scale-pop 1.0 → 1.08 → 1.0 with overshoot up and
+        // smooth come-back.
         opacity = 1;
         ty = 0;
+        scale = 1;
         phase = "settle";
         const sp = (dt2 - PROCESS_STEPS_WORKING) / PROCESS_STEPS_SETTLE;
-        if (sp < 0.4) {
-          // 0–40%: cross-fade sparkle → check, check ramps toward 1.10.
-          const k = sp / 0.4;
-          sparkleOpacity = 1 - k;
-          sparkleScale = 1 - 0.3 * k;
-          checkOpacity = k;
-          checkScale = 0.6 + 0.5 * k; // 0.6 → 1.10
-        } else if (sp < 0.7) {
-          // 40–70%: check at peak (1.10 → 1.08), sparkle fully gone.
-          sparkleOpacity = 0;
-          sparkleScale = 0.7;
-          checkOpacity = 1;
-          checkScale = 1.1 - 0.02 * ((sp - 0.4) / 0.3);
+
+        // Sparkle fade-out: 0 → 0.70 of settle.
+        if (sp < 0.70) {
+          const k = sp / 0.70;
+          sparkleOpacity = 1 - _psEaseInOutCubic(k);
+          sparkleScale   = 1 - 0.30 * k;
         } else {
-          // 70–100%: check settles to 1.0.
           sparkleOpacity = 0;
-          sparkleScale = 0.7;
-          checkOpacity = 1;
-          checkScale = 1.08 - 0.08 * ((sp - 0.7) / 0.3);
+          sparkleScale   = 0.7;
+        }
+
+        // Check fade-in: 0.30 → 1.0 of settle.
+        if (sp < 0.30) {
+          checkOpacity = 0;
+        } else {
+          const k = (sp - 0.30) / 0.70;
+          checkOpacity = _psEaseInOutCubic(k);
+        }
+
+        // Check scale-pop on the full settle window: 1.0 → 1.08 → 1.0.
+        if (sp < 0.5) {
+          const k = sp / 0.5;
+          checkScale = 1.0 + 0.08 * _psEasePopUp(k);
+        } else {
+          const k = (sp - 0.5) / 0.5;
+          checkScale = 1.08 - 0.08 * _psEasePopBack(k);
         }
       } else if (
         dt2 <
         PROCESS_STEPS_WORKING + PROCESS_STEPS_SETTLE + PROCESS_STEPS_EXIT
       ) {
-        // Exit: fade out + slide further up by PROCESS_STEPS_EXIT_TY.
-        // Check fades with the row.
+        // Exit: opacity 1 → 0, ty 0 → −14, scale 1.0 → 1.005 (slight
+        // lift-off feel). Check fades with the row.
         const ep =
           (dt2 - PROCESS_STEPS_WORKING - PROCESS_STEPS_SETTLE) /
           PROCESS_STEPS_EXIT;
-        const eo = _psEaseOutCubic(ep);
+        const eo = _psEaseExit(ep);
         opacity = 1 - eo;
         ty = -PROCESS_STEPS_EXIT_TY * eo;
+        scale = 1 + (PROCESS_STEPS_EXIT_SCALE_TO - 1) * eo;
         phase = "exit";
         sparkleOpacity = 0;
         sparkleScale = 0.7;
@@ -1049,14 +992,16 @@ function applyProcessStepsStateAt(t) {
         // Past the row's full lifecycle.
         opacity = 0;
         ty = -PROCESS_STEPS_EXIT_TY;
+        scale = PROCESS_STEPS_EXIT_SCALE_TO;
         phase = "done";
         sparkleOpacity = 0;
         checkOpacity = 0;
+        checkScale = 1;
       }
     }
 
     row.style.opacity = String(opacity);
-    row.style.transform = `translateY(${ty}px)`;
+    row.style.transform = `translateY(${ty}px) scale(${scale})`;
     row.dataset.phase = phase;
     row.classList.toggle("is-shimmer", shimmer);
 
@@ -1065,7 +1010,6 @@ function applyProcessStepsStateAt(t) {
       sparkle.style.opacity = String(_psClamp01(sparkleOpacity));
       sparkle.style.transform = `scale(${sparkleScale})`;
     }
-    // Final row has no check element; guard the lookup.
     const check = row.querySelector(".exp-process-check");
     if (check) {
       check.style.opacity = String(_psClamp01(checkOpacity));
@@ -1083,7 +1027,7 @@ function resetProcessStepsLines() {
     el.style.transform = "";
     el.dataset.phase = "idle";
     el.querySelectorAll(
-      ".exp-process-sparkle, .exp-process-check, .exp-process-finale-spark"
+      ".exp-process-sparkle, .exp-process-check"
     ).forEach((g) => {
       g.style.opacity = "";
       g.style.transform = "";
