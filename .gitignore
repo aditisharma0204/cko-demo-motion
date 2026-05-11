@@ -60,3 +60,10 @@ node_modules/
 # Salesforce skills cache (local AI tooling)
 skills/
 skills-lock.json
+
+# Internal / proprietary design references — never commit
+Figma Screens/
+Icons/Spakrle-SF.png
+Icons/Utility Icons/
+assets/Agent_Astro_Sunglasses_AFlip_*.png
+.planning/

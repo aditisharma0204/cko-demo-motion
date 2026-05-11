@@ -805,7 +805,7 @@ const PROCESS_STEPS_EXIT = 220;
 // Step 2 and 3 keep the existing snappy 220ms enter so they don't
 // feel like full hero entrances every time.
 const PROCESS_STEPS_STEP1_ENTER    = 340; // was 220
-const PROCESS_STEPS_STEP1_ENTER_TY = 40;  // was 14 — visibly slides up
+const PROCESS_STEPS_STEP1_ENTER_TY = 80;  // ~10% of viewport — matches Ryan's spec for the post-hero text entrance
 
 // Helpers that return per-step enter values without growing the
 // rest of this module.
