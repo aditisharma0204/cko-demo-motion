@@ -800,26 +800,43 @@ const PROCESS_STEPS_WORKING = 1800;
 const PROCESS_STEPS_SETTLE = 280;
 const PROCESS_STEPS_EXIT = 220;
 
-const PROCESS_STEPS_STEP_DUR =
-  PROCESS_STEPS_ENTER +
-  PROCESS_STEPS_WORKING +
-  PROCESS_STEPS_SETTLE +
-  PROCESS_STEPS_EXIT; // 2520ms
+// Step 1 (data-step="0") gets a more substantial entrance —
+// matches the deliberate pace of the hero exit that precedes it.
+// Step 2 and 3 keep the existing snappy 220ms enter so they don't
+// feel like full hero entrances every time.
+const PROCESS_STEPS_STEP1_ENTER    = 340; // was 220
+const PROCESS_STEPS_STEP1_ENTER_TY = 40;  // was 14 — visibly slides up
+
+// Helpers that return per-step enter values without growing the
+// rest of this module.
+function processStepsEnterDur(i) {
+  return i === 0 ? PROCESS_STEPS_STEP1_ENTER : PROCESS_STEPS_ENTER;
+}
+function processStepsEnterTy(i) {
+  return i === 0 ? PROCESS_STEPS_STEP1_ENTER_TY : PROCESS_STEPS_ENTER_TY;
+}
+function processStepsStepDur(i) {
+  return (
+    processStepsEnterDur(i) +
+    PROCESS_STEPS_WORKING +
+    PROCESS_STEPS_SETTLE +
+    PROCESS_STEPS_EXIT
+  );
+}
 
 // Cross-step gap. After one step's `exit` ends, wait this many ms
 // of dead air before the next step's `enter` begins. Gives the eye
 // a clear "the previous sentence is done" beat and avoids the two
 // rows visually colliding (they share the same absolute slot).
-// Stride between consecutive step starts is (STEP_DUR + GAP).
 const PROCESS_STEPS_GAP = 180;
-const PROCESS_STEPS_STRIDE = PROCESS_STEPS_STEP_DUR + PROCESS_STEPS_GAP; // 2700ms
 
-// Tail buffer after Step 3's exit ends, before the timeline closes
-// and Details takes over — keeps the handoff from feeling cut off.
+// Tail buffer after the last step's exit ends, before the timeline
+// closes and Details takes over — keeps the handoff from feeling
+// cut off.
 const PROCESS_STEPS_TAIL = 200;
 
-// Translate distances (px) for the row's enter/exit slide. Sized to
-// feel proportional to the larger 42px line-height row.
+// Translate distances (px) for the (default) row's enter/exit
+// slide. Step 1 overrides the enter Ty via the helper above.
 const PROCESS_STEPS_ENTER_TY = 14;
 const PROCESS_STEPS_EXIT_TY = 14;
 
@@ -828,20 +845,25 @@ const PROCESS_STEPS_EXIT_TY = 14;
 const PROCESS_STEPS_ENTER_SCALE_FROM = 0.985;
 const PROCESS_STEPS_EXIT_SCALE_TO   = 1.005;
 
-// Start time (ms, relative to t=0) of each row.
+// Start time (ms, relative to t=0) of each row. Step 2 begins at
+// Step 1's FULL duration + GAP (so Step 1's longer enter doesn't
+// crowd Step 2). Step 3 follows Step 2 at the standard cadence.
+//   step 0: 0
+//   step 1: (340 + 1800 + 280 + 220) + 180 = 2820
+//   step 2: 2820 + (220 + 1800 + 280 + 220) + 180 = 5520
 const PROCESS_STEPS_STARTS = (() => {
-  const out = [];
-  for (let i = 0; i < PROCESS_STEPS_LINE_COUNT; i++) {
-    out.push(i * PROCESS_STEPS_STRIDE);
+  const out = [0];
+  for (let i = 1; i < PROCESS_STEPS_LINE_COUNT; i++) {
+    out.push(out[i - 1] + processStepsStepDur(i - 1) + PROCESS_STEPS_GAP);
   }
   return out;
 })();
 
 // Total timeline duration: last step's start + its full duration + tail.
-// 2 × 2700 + 2520 + 200 = 8120ms.
+// 5520 + 2520 + 200 = 8240ms.
 const PROCESS_STEPS_TOTAL =
   PROCESS_STEPS_STARTS[PROCESS_STEPS_LINE_COUNT - 1] +
-  PROCESS_STEPS_STEP_DUR +
+  processStepsStepDur(PROCESS_STEPS_LINE_COUNT - 1) +
   PROCESS_STEPS_TAIL;
 
 // Playback bar tick marks live at the instant each row begins entering.
@@ -895,10 +917,15 @@ function applyProcessStepsStateAt(t) {
   rows.forEach((row, i) => {
     const dt = t - PROCESS_STEPS_STARTS[i];
 
+    // Per-step enter overrides. Step 1 (i === 0) slides up further
+    // and takes longer; Steps 2–3 keep the original snappy enter.
+    const enterDur = processStepsEnterDur(i);
+    const enterTy  = processStepsEnterTy(i);
+
     // Defaults: row hidden, primed below its resting position with a
     // hair of scale-down so the enter animation slides up + grows in.
     let opacity = 0;
-    let ty = PROCESS_STEPS_ENTER_TY;
+    let ty = enterTy;
     let scale = PROCESS_STEPS_ENTER_SCALE_FROM;
     let phase = "idle";
     let shimmer = false;
@@ -909,16 +936,16 @@ function applyProcessStepsStateAt(t) {
 
     if (dt < 0) {
       // Step hasn't started yet — keep defaults.
-    } else if (dt < PROCESS_STEPS_ENTER) {
-      // Enter: opacity 0 → 1, ty +14 → 0, scale 0.985 → 1.0.
-      const p = _psEaseEnter(dt / PROCESS_STEPS_ENTER);
+    } else if (dt < enterDur) {
+      // Enter: opacity 0 → 1, ty +enterTy → 0, scale 0.985 → 1.0.
+      const p = _psEaseEnter(dt / enterDur);
       opacity = p;
-      ty = PROCESS_STEPS_ENTER_TY * (1 - p);
+      ty = enterTy * (1 - p);
       scale = PROCESS_STEPS_ENTER_SCALE_FROM
         + (1 - PROCESS_STEPS_ENTER_SCALE_FROM) * p;
       phase = "enter";
     } else {
-      const dt2 = dt - PROCESS_STEPS_ENTER;
+      const dt2 = dt - enterDur;
       if (dt2 < PROCESS_STEPS_WORKING) {
         // Working: full opacity, shimmer on, sparkle pulsing gently.
         // Softer ±3% scale at ~0.6 of a full cycle across the phase
@@ -1107,6 +1134,15 @@ $pills.forEach((pill) => {
   });
 });
 
+// Put the landing hero back to its rest state (no .is-leaving class,
+// CTA enabled). Used by the reset handler and called anywhere we
+// re-enter the landing view.
+function resetHero() {
+  const heroEl = document.querySelector(".view-landing .hero");
+  if (heroEl) heroEl.classList.remove("is-leaving");
+  if ($btnGetStarted) $btnGetStarted.disabled = false;
+}
+
 if ($reset) {
   $reset.addEventListener("click", () => {
     // Stop any running playback first.
@@ -1120,6 +1156,7 @@ if ($reset) {
     clearGestureTitle();
     resetExplorationStates();
     clearStagePosition();
+    resetHero();
     if (clarityLottie) {
       try {
         clarityLottie.goToAndStop(0, true);
@@ -1207,14 +1244,20 @@ if ($playbackTrack) {
 /* ----------------------------------------------------------- */
 /* Get Started → run the active exploration                     */
 /* ----------------------------------------------------------- */
+// Hero exit timing. Kept in sync with .hero / .hero.is-leaving in
+// styles.css (480ms). We wait a hair longer than the CSS transition
+// so the rise + fade fully completes before the view swaps.
+const HERO_EXIT_WAIT = 500;
+
 if ($btnGetStarted) {
-  $btnGetStarted.addEventListener("click", () => {
+  $btnGetStarted.addEventListener("click", async () => {
     if (isRunning) return;
     isRunning = true;
 
     // Take focus off the button BEFORE we set aria-hidden on the landing —
     // avoids the "focused descendant inside aria-hidden" warning.
     $btnGetStarted.blur();
+    $btnGetStarted.disabled = true;
 
     // Reset previous-run state, but DO NOT clear the stage position.
     resetExplorationStates();
@@ -1222,8 +1265,20 @@ if ($btnGetStarted) {
     // Snapshot the preview card position while landing is still visible.
     positionStageOverPreviewCard();
 
+    // Hero exit — preview card + title + subtitle + CTA lift up 10%
+    // and fade to 0 before the view switches. .hero.is-leaving also
+    // disables pointer events on the section so a second click can't
+    // sneak through during the animation.
+    const heroEl = document.querySelector(".view-landing .hero");
+    if (heroEl) heroEl.classList.add("is-leaving");
+
+    await wait(HERO_EXIT_WAIT);
+
+    // Now the view swap. We call runCreationSequence on the next tick
+    // (no extra delay) so Step 1's enhanced 340ms entrance overlaps
+    // with the view's fade-in — feels like one continuous motion.
     switchView("creating");
-    setTimeout(runCreationSequence, 350);
+    setTimeout(runCreationSequence, 0);
   });
 }
 
